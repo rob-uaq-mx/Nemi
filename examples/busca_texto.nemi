@@ -1,0 +1,15 @@
+# busca_texto — primera aparición del patrón p (longitud m) en el texto t (longitud n)
+# Prueba: busca_texto("001", 3, "010001", 6) = 4   (regresa 0 si no aparece)
+
+función busca_texto(p, m, t, n)
+    para i ← 1 hasta n − m + 1
+        j ← 1
+        mientras t[i + j − 1] = p[j]
+            j ← j + 1
+            si j > m
+                regresa i          ▷ patrón encontrado en la posición i
+            fin si
+        fin mientras
+    fin para
+    regresa 0                       ▷ no aparece
+fin función

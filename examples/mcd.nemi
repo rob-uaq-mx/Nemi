@@ -1,0 +1,15 @@
+# mcd — máximo común divisor por el algoritmo de Euclides
+# Usa la primitiva intercambia(a, b) (véase Nemi.md §14–15).
+# Prueba: mcd(504, 396) = 36;   mcd(105, 30) = 15
+
+función mcd(a, b)                   ▷ a, b ≥ 0, no ambos cero
+    si a < b
+        intercambia(a, b)
+    fin si
+    mientras b ≠ 0
+        r ← a mod b
+        a ← b
+        b ← r
+    fin mientras
+    regresa a
+fin función

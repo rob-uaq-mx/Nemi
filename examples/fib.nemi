@@ -1,0 +1,10 @@
+# fib — n-ésimo número de Fibonacci (recursivo)
+# Prueba: fib(5) = 5
+
+función fib(n)
+    si n = 0 ∨ n = 1
+        regresa n
+    alt
+        regresa fib(n − 1) + fib(n − 2)
+    fin si
+fin función

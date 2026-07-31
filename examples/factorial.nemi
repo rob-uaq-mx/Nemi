@@ -1,0 +1,13 @@
+# factorial — n! (recursivo)
+# Prueba: factorial(5) = 120
+
+función factorial(n)
+    si n = 0
+        regresa 1
+    alt
+        regresa n · factorial(n − 1)
+    fin si
+fin función
+
+f <- factorial(5)
+imprime(f)

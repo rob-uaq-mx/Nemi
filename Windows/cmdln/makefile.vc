@@ -1,0 +1,22 @@
+# NMAKE makefile for Visual Studio (cl.exe)
+# Usage, from a "Developer Command Prompt for VS":
+#   nmake /f makefile.vc
+#   nmake /f makefile.vc clean
+#
+# NOTE: NMAKE expects CRLF line endings. If rules are silently
+# ignored, convert with:
+#   powershell -Command "(Get-Content makefile.vc) | Set-Content makefile.vc"
+
+CFLAGS = /nologo /W4 /O2 /DUNICODE /D_UNICODE /D_CRT_SECURE_NO_WARNINGS /utf-8 /Iinclude
+LIBS = user32.lib gdi32.lib
+TARGET = bin\wincmdln.exe
+
+all: $(TARGET)
+
+$(TARGET): src\CmdLineCtl.c src\winmain.c include\CmdLineCtl.h
+	if not exist obj mkdir obj
+	if not exist bin mkdir bin
+	cl $(CFLAGS) /Foobj\ /Fe$(TARGET) src\CmdLineCtl.c src\winmain.c /link /SUBSYSTEM:WINDOWS $(LIBS)
+
+clean:
+	-del /q obj\*.obj $(TARGET) 2>nul

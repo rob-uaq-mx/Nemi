@@ -1,0 +1,12 @@
+# Local tooling / editor config (not part of the Nemi project itself).
+.claude/
+.vs/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
+# OS cruft
+Thumbs.db
+.DS_Store

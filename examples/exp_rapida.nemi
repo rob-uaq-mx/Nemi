@@ -1,0 +1,15 @@
+# exp_rápida — a^n por cuadrados repetidos (O(log n) multiplicaciones)
+# Prueba: exp_rápida(2, 10) = 1024
+
+función exp_rápida(a, n)
+    resultado ← 1
+    x ← a
+    mientras n > 0
+        si n mod 2 = 1
+            resultado ← resultado · x
+        fin si
+        x ← x · x
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función

@@ -1,0 +1,3 @@
+# incluye_ciclo_a / incluye_ciclo_b — fixture de prueba: se incluyen
+# mutuamente, para comprobar que "incluye" detecta y rechaza los ciclos.
+incluye "incluye_ciclo_b.nemi"

@@ -1,0 +1,10 @@
+# factorial_iter — n! (iterativo)
+# Prueba: factorial_iter(6) = 720
+
+función factorial_iter(n)
+    resultado ← 1
+    para i ← 2 hasta n
+        resultado ← resultado · i
+    fin para
+    regresa resultado
+fin función

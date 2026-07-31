@@ -1,0 +1,15 @@
+# Warshall — cerradura transitiva de una relación dada por su matriz cero-uno A (n×n)
+# '+' y '·' aquí son booleanos (∨/∧); las entradas son bits.
+# Prueba: véase el Ejemplo 1.164 (traza W0…W4) en los apuntes del curso.
+
+función Warshall(A, n)              ▷ A es una matriz cero-uno n×n
+    W ← A
+    para k ← 1 hasta n
+        para i ← 1 hasta n
+            para j ← 1 hasta n
+                W[i][j] ← W[i][j] ∨ (W[i][k] ∧ W[k][j])
+            fin para
+        fin para
+    fin para
+    regresa W
+fin función

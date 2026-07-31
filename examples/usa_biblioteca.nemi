@@ -1,0 +1,4 @@
+# usa_biblioteca — demuestra "incluye" (spec §10/§12): las funciones de
+# biblioteca.nemi quedan disponibles aquí como si estuvieran escritas
+# en este mismo archivo.
+incluye "biblioteca.nemi"

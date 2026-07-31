@@ -1,0 +1,50 @@
+name: CI
+
+# Runs both Nemi implementations against the shared acceptance corpus
+# (examples/) so a change to either one is checked before merge. See
+# cpp/backlog.md "Fase 6" for context.
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    name: Python — acceptance suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run python/tests/run_corpus.py
+        env:
+          PYTHONUTF8: "1"
+        run: python python/tests/run_corpus.py
+
+  cpp-linux:
+    name: C++ (${{ matrix.compiler }}) — ctest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [clang++, g++]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S cpp -B cpp/build -DCMAKE_CXX_COMPILER=${{ matrix.compiler }} -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build cpp/build --config Release
+      - name: Test
+        run: ctest --test-dir cpp/build --output-on-failure
+
+  cpp-windows:
+    name: C++ (MSVC) — ctest
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S cpp -B cpp/build
+      - name: Build
+        run: cmake --build cpp/build --config Release
+      - name: Test
+        run: ctest --test-dir cpp/build -C Release --output-on-failure

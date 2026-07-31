@@ -1,0 +1,100 @@
+/*----------------------------------------------------------------------
+   WinNemi.rc -- resource script (menus, accelerators, dialogs), in
+   Spanish. Modernized/translated from popedit/POPPAD.RC; adds the new
+   "Ejecutar" menu (F5). #pragma code_page(65001) lets the accented
+   Spanish text below be written directly as UTF-8 source.
+  ----------------------------------------------------------------------*/
+
+#include <windows.h>
+#include "WinNemi.h"
+
+#pragma code_page(65001)
+
+WinNemi ICON "WinNemi.ico"
+
+WinNemi MENU
+     {
+     POPUP "&Archivo"
+          {
+          MENUITEM "&Nuevo\tCtrl+N",          IDM_NEW
+          MENUITEM "&Abrir...\tCtrl+O",       IDM_OPEN
+          MENUITEM "&Guardar\tCtrl+S",        IDM_SAVE
+          MENUITEM "Guardar &como...",        IDM_SAVEAS
+          MENUITEM SEPARATOR
+          MENUITEM "&Imprimir...\tCtrl+P",    IDM_PRINT
+          MENUITEM SEPARATOR
+          MENUITEM "&Salir",                  IDM_EXIT
+          }
+     POPUP "&Editar"
+          {
+          MENUITEM "&Deshacer\tCtrl+Z",       IDM_UNDO
+          MENUITEM SEPARATOR
+          MENUITEM "Cor&tar\tCtrl+X",         IDM_CUT
+          MENUITEM "&Copiar\tCtrl+C",         IDM_COPY
+          MENUITEM "&Pegar\tCtrl+V",          IDM_PASTE
+          MENUITEM "&Eliminar\tSupr",         IDM_CLEAR
+          MENUITEM SEPARATOR
+          MENUITEM "Seleccionar &todo",       IDM_SELALL
+          }
+     POPUP "&Buscar"
+          {
+          MENUITEM "&Buscar...\tCtrl+F",      IDM_FIND
+          MENUITEM "Buscar &siguiente\tF3",   IDM_NEXT
+          MENUITEM "&Reemplazar...\tCtrl+R",  IDM_REPLACE
+          }
+     POPUP "F&ormato"
+          {
+          MENUITEM "&Fuente...",              IDM_FONT
+          }
+     POPUP "&Ejecutar"
+          {
+          MENUITEM "&Ejecutar archivo\tF5",   IDM_RUN
+          }
+     POPUP "Ay&uda"
+          {
+          MENUITEM "&Ayuda",                  IDM_HELP
+          MENUITEM "&Acerca de WinNemi...",   IDM_ABOUT
+          }
+     }
+
+WinNemi ACCELERATORS
+     {
+     "^N",        IDM_NEW
+     "^O",        IDM_OPEN
+     "^S",        IDM_SAVE
+     "^P",        IDM_PRINT
+     VK_F5,       IDM_RUN,   VIRTKEY
+     "^Z",        IDM_UNDO
+     VK_BACK,     IDM_UNDO,  VIRTKEY, ALT
+     "^X",        IDM_CUT
+     VK_DELETE,   IDM_CUT,   VIRTKEY, SHIFT
+     "^C",        IDM_COPY
+     VK_INSERT,   IDM_COPY,  VIRTKEY, CONTROL
+     "^V",        IDM_PASTE
+     VK_INSERT,   IDM_PASTE, VIRTKEY, SHIFT
+     VK_DELETE,   IDM_CLEAR, VIRTKEY
+     "^F",        IDM_FIND
+     VK_F3,       IDM_NEXT,  VIRTKEY
+     "^R",        IDM_REPLACE
+     VK_F1,       IDM_HELP,  VIRTKEY
+     }
+
+AboutBox DIALOG  20, 20, 160, 90
+     STYLE WS_POPUP | WS_DLGFRAME
+     {
+     CTEXT "WinNemi",                                  -1,   0, 12, 160,  8
+     ICON  "WinNemi",                                  -1,   8,  8,   0,  0
+     CTEXT "Editor y consola para archivos Nemi",      -1,   0, 30, 160,  8
+     CTEXT "Basado en PopPad, de Charles Petzold (1996)", -1, 0, 42, 160,  8
+     DEFPUSHBUTTON "Aceptar",                        IDOK,  64, 68,  32, 14, WS_GROUP
+     }
+
+PrintDlgBox DIALOG 20, 20, 100, 76
+     STYLE WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_VISIBLE
+     CAPTION "WinNemi"
+     {
+     CTEXT "Enviando",                       -1,  0, 10, 100,  8
+     CTEXT "",                       IDD_FNAME,  0, 20, 100,  8
+     CTEXT "a la cola de impresión.",        -1,  0, 30, 100,  8
+     DEFPUSHBUTTON  "Cancelar",       IDCANCEL, 34, 50,  32, 14, WS_GROUP
+     }

@@ -1,0 +1,17 @@
+# guion_factorial — demuestra INSTRUCCIONES SUELTAS a nivel superior (estilo guión).
+# Las definiciones se registran primero (hoisting); luego se ejecutan las
+# instrucciones de nivel superior en orden. Una llamada suelta se evalúa pero
+# NO imprime (à la Python); usa imprime(...) para producir salida.
+# Ejecuta:  python -m nemi ../examples/guion_factorial.nemi
+
+función factorial(n)
+    si n = 0
+        regresa 1
+    alt
+        regresa n · factorial(n − 1)
+    fin si
+fin función
+
+factorial(100)                       ▷ se evalúa, sin salida (valor descartado)
+imprime("10! =", factorial(10))     ▷ imprime: 10! = 3628800
+imprime("100! =", factorial(100))   ▷ imprime 100! (bignum)

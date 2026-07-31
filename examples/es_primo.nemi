@@ -1,0 +1,11 @@
+# es_primo — regresa 0 si n es primo, o un factor d (2 ≤ d ≤ ⌊√n⌋) si es compuesto
+# Prueba: es_primo(97) = 0;   es_primo(51) = 3
+
+función es_primo(n)
+    para d ← 2 hasta ⌊√n⌋
+        si n mod d = 0
+            regresa d              ▷ compuesto; d es un factor
+        fin si
+    fin para
+    regresa 0                       ▷ primo
+fin función

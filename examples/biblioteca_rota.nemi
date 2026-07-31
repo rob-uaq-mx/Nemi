@@ -1,0 +1,6 @@
+# biblioteca_rota — a propósito mal formada (falta el ")" de los parámetros):
+# fixture de prueba para comprobar que un error dentro de un archivo incluido
+# señala ESTE archivo, no el que lo incluye.
+función rota(x
+    regresa x
+fin función

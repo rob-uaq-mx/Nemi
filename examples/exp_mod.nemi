@@ -1,0 +1,16 @@
+# exp_mod — a^n mod z por cuadrados repetidos (base de RSA)
+# Requiere enteros de precisión arbitraria (bignum).
+# Prueba: exp_mod(572, 29, 713) = 113;   exp_mod(3, 13, 7) = 3
+
+función exp_mod(a, n, z)
+    resultado ← 1
+    x ← a mod z
+    mientras n > 0
+        si n mod 2 = 1
+            resultado ← (resultado · x) mod z
+        fin si
+        x ← (x · x) mod z
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función

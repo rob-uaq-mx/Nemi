@@ -1,0 +1,11 @@
+# biblioteca — un par de funciones reutilizables, para demostrar
+# "incluye" (spec §10/§12): una "biblioteca estándar" es solo otro archivo
+# .nemi que otros archivos pueden incluir.
+
+función doble(x)
+    regresa x · 2
+fin función
+
+función es_par(x)
+    regresa (x mod 2) = 0
+fin función

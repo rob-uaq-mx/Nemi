@@ -1,0 +1,12 @@
+# máximo — valor máximo de una sucesión s[1..n]
+# Prueba: máximo([3, 9, 4], 3) = 9
+
+función máximo(s, n)
+    grande ← s[1]
+    para i ← 2 hasta n
+        si s[i] > grande
+            grande ← s[i]
+        fin si
+    fin para
+    regresa grande
+fin función

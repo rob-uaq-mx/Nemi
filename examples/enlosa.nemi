@@ -1,0 +1,17 @@
+# enlosa — enlosado de un tablero deficiente 2^k × 2^k con trominos derechos (recursivo)
+# ATENCIÓN: contiene ACCIONES EN PROSA « … » no ejecutables por el núcleo.
+# Sirve para probar la ESTRUCTURA de recursión, o para exigir primitivas
+# geométricas del entorno (véase Nemi.md §14).
+
+procedimiento enlosa(n, L)          ▷ n potencia de 2; L: cuadro faltante
+    si n = 2
+        « enlosar el bloque 2×2 con un tromino derecho »
+        regresa
+    fin si
+    « dividir el tablero en cuatro subtableros de (n/2)×(n/2) »
+    « colocar un tromino central que cubra un cuadro de cada subtablero sin L »
+    enlosa(n / 2, m1)
+    enlosa(n / 2, m2)
+    enlosa(n / 2, m3)
+    enlosa(n / 2, m4)
+fin procedimiento

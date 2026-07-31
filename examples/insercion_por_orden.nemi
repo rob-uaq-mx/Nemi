@@ -1,0 +1,15 @@
+# inserción_por_orden — ordena la sucesión s[1..n] en orden no decreciente, in situ
+# Es un procedimiento: muta su parámetro s (paso por referencia).
+# Prueba: s = [34, 20, 19, 5]  →  s = [5, 19, 20, 34]
+
+procedimiento inserción_por_orden(s, n)
+    para i ← 2 hasta n
+        val ← s[i]
+        j ← i − 1
+        mientras j ≥ 1 ∧ val < s[j]
+            s[j + 1] ← s[j]
+            j ← j − 1
+        fin mientras
+        s[j + 1] ← val
+    fin para
+fin procedimiento

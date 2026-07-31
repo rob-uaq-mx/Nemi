@@ -1,0 +1,16 @@
+# fib_iter — n-ésimo número de Fibonacci (iterativo)
+# Prueba: fib_iter(10) = 55
+
+función fib_iter(n)
+    si n = 0 ∨ n = 1
+        regresa n
+    fin si
+    anterior ← 0
+    actual ← 1
+    para i ← 2 hasta n
+        siguiente ← anterior + actual
+        anterior ← actual
+        actual ← siguiente
+    fin para
+    regresa actual
+fin función
