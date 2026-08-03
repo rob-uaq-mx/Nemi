@@ -12,8 +12,15 @@ namespace {
 // A block ends where a comparison operator could start (§10 op_comp).
 bool is_comparison(TokenKind k) {
     return k == TokenKind::Eq || k == TokenKind::Ne || k == TokenKind::Lt ||
-           k == TokenKind::Le || k == TokenKind::Gt || k == TokenKind::Ge;
+           k == TokenKind::Le || k == TokenKind::Gt || k == TokenKind::Ge ||
+           k == TokenKind::In || k == TokenKind::Within || k == TokenKind::NotIn ||
+           k == TokenKind::SubsetEq || k == TokenKind::Subset;
 }
+// TokenKind::Within ("en") is a word-only synonym for In (∈) here -- no
+// ASCII-symbol equivalent otherwise, unlike !=/<=/>=. Reused in two grammar
+// positions: this one (membership) and right after "cada" in
+// parse_for_each() (loop syntax) -- no ambiguity because parse_for_each
+// consumes it by direct position, never through this general production.
 
 ExprPtr make_binary(TokenKind op, ExprPtr left, ExprPtr right, SourceLocation loc) {
     auto node = std::make_unique<Binary>();
@@ -56,7 +63,7 @@ bool Parser::match(TokenKind kind) {
 const Token& Parser::expect(TokenKind kind, const char* what) {
     const Token& tok = peek();
     if (tok.kind != kind) {
-        throw ParseError(std::string("expected ") + what + ", found " +
+        throw ParseError(std::string("se esperaba ") + what + ", se encontró " +
                          to_string(tok.kind), tok.location);
     }
     return advance();
@@ -86,10 +93,10 @@ DefinitionPtr Parser::parse_definition() {
     } else if (tok.kind == TokenKind::Procedure) {
         is_function = false;
     } else {
-        throw ParseError("expected 'función' or 'procedimiento'", tok.location);
+        throw ParseError("se esperaba 'función' o 'procedimiento'", tok.location);
     }
     advance();
-    std::string name = expect(TokenKind::Ident, "definition name").string_value();
+    std::string name = expect(TokenKind::Ident, "nombre de definición").string_value();
     expect(TokenKind::LParen, "'('");
     std::vector<std::string> params = parse_params();
     expect(TokenKind::RParen, "')'");
@@ -97,7 +104,7 @@ DefinitionPtr Parser::parse_definition() {
     expect(TokenKind::End, "'fin'");
     // The closing keyword must match the opener.
     TokenKind closer = is_function ? TokenKind::Function : TokenKind::Procedure;
-    expect(closer, "'función'/'procedimiento' after 'fin'");
+    expect(closer, "'función'/'procedimiento' después de 'fin'");
 
     auto def = std::make_unique<Definition>();
     def->name = std::move(name);
@@ -113,7 +120,7 @@ std::vector<std::string> Parser::parse_params() {
     if (check(TokenKind::Ident)) {
         params.push_back(advance().string_value());
         while (match(TokenKind::Comma)) {
-            params.push_back(expect(TokenKind::Ident, "parameter name").string_value());
+            params.push_back(expect(TokenKind::Ident, "nombre de parámetro").string_value());
         }
     }
     return params;
@@ -135,7 +142,13 @@ Block Parser::parse_block() {
 
 StmtPtr Parser::parse_statement() {
     TokenKind kind = peek().kind;
-    if (kind == TokenKind::For) return parse_for();
+    if (kind == TokenKind::For) {
+        // Disambiguate 'para cada ... en ...' from 'para ident <- ... hasta
+        // ...' (one token of extra lookahead; Eof always follows any real
+        // token, so i_ + 1 is always in bounds here).
+        if (tokens_[i_ + 1].kind == TokenKind::Each) return parse_for_each();
+        return parse_for();
+    }
     if (kind == TokenKind::While) return parse_while();
     if (kind == TokenKind::If) return parse_if();
     if (kind == TokenKind::Return) return parse_return();
@@ -146,16 +159,18 @@ StmtPtr Parser::parse_statement() {
         node->location = tok.location;
         return node;
     }
+    if (kind == TokenKind::Assert) return parse_assert();
+    if (kind == TokenKind::Trace) return parse_trace();
     if (kind == TokenKind::Ident) return parse_assign_or_call();
 
     const Token& tok = peek();
-    throw ParseError(std::string("unexpected ") + to_string(tok.kind) +
-                     " at start of statement", tok.location);
+    throw ParseError(std::string(to_string(tok.kind)) +
+                     " inesperado al inicio de la instrucción", tok.location);
 }
 
 StmtPtr Parser::parse_for() {
     const Token& tok = advance();  // para
-    std::string var = expect(TokenKind::Ident, "loop variable").string_value();
+    std::string var = expect(TokenKind::Ident, "variable de ciclo").string_value();
     expect(TokenKind::Assign, "'←'");
     ExprPtr start = parse_expression();
     expect(TokenKind::To, "'hasta'");
@@ -163,7 +178,7 @@ StmtPtr Parser::parse_for() {
     match(TokenKind::Repeat);  // optional 'repite'
     Block body = parse_block();
     expect(TokenKind::End, "'fin'");
-    expect(TokenKind::For, "'para' after 'fin'");
+    expect(TokenKind::For, "'para' después de 'fin'");
 
     auto node = std::make_unique<ForLoop>();
     node->var = std::move(var);
@@ -174,12 +189,33 @@ StmtPtr Parser::parse_for() {
     return node;
 }
 
+StmtPtr Parser::parse_for_each() {
+    // ciclo_cada ::= "para" "cada" ident "en" expresión [ "repite" ]
+    //                bloque "fin" "para"   (spec §20.3, v0.2)
+    const Token& tok = advance();  // para
+    advance();  // cada
+    std::string var = expect(TokenKind::Ident, "variable de ciclo").string_value();
+    expect(TokenKind::Within, "'en'");
+    ExprPtr collection = parse_expression();
+    match(TokenKind::Repeat);  // optional 'repite'
+    Block body = parse_block();
+    expect(TokenKind::End, "'fin'");
+    expect(TokenKind::For, "'para' después de 'fin'");
+
+    auto node = std::make_unique<ForEach>();
+    node->var = std::move(var);
+    node->collection = std::move(collection);
+    node->body = std::move(body);
+    node->location = tok.location;
+    return node;
+}
+
 StmtPtr Parser::parse_while() {
     const Token& tok = advance();  // mientras
     ExprPtr condition = parse_expression();
     Block body = parse_block();
     expect(TokenKind::End, "'fin'");
-    expect(TokenKind::While, "'mientras' after 'fin'");
+    expect(TokenKind::While, "'mientras' después de 'fin'");
 
     auto node = std::make_unique<WhileLoop>();
     node->condition = std::move(condition);
@@ -200,7 +236,7 @@ StmtPtr Parser::parse_if() {
         else_body = parse_block();
     }
     expect(TokenKind::End, "'fin'");
-    expect(TokenKind::If, "'si' after 'fin'");
+    expect(TokenKind::If, "'si' después de 'fin'");
 
     auto node = std::make_unique<If>();
     node->condition = std::move(condition);
@@ -239,7 +275,7 @@ StmtPtr Parser::parse_assign_or_call() {
         indices.push_back(parse_expression());
         expect(TokenKind::RBracket, "']'");
     }
-    expect(TokenKind::Assign, "'←' (assignment) or '(' (call)");
+    expect(TokenKind::Assign, "'←' (asignación) o '(' (llamada)");
     ExprPtr value = parse_expression();
 
     auto node = std::make_unique<Assign>();
@@ -250,13 +286,40 @@ StmtPtr Parser::parse_assign_or_call() {
     return node;
 }
 
+StmtPtr Parser::parse_assert() {
+    // aserción ::= "afirma" expresión [ "," cadena ]   (spec §21.2, v0.2)
+    const Token& tok = advance();  // afirma
+    ExprPtr condition = parse_expression();
+    std::optional<std::string> message;
+    if (match(TokenKind::Comma)) {
+        message = expect(TokenKind::String, "cadena de mensaje de la aserción").string_value();
+    }
+
+    auto node = std::make_unique<Assert>();
+    node->condition = std::move(condition);
+    node->message = std::move(message);
+    node->location = tok.location;
+    return node;
+}
+
+StmtPtr Parser::parse_trace() {
+    // rastreo ::= "traza" expresión   (spec §21.3, v0.2 [OPC])
+    const Token& tok = advance();  // traza
+    ExprPtr expression = parse_expression();
+
+    auto node = std::make_unique<Trace>();
+    node->expression = std::move(expression);
+    node->location = tok.location;
+    return node;
+}
+
 // -- expressions (precedence tower) ------------------------------------------
 ExprPtr Parser::parse_expression() { return parse_logic_or(); }
 
 StmtPtr Parser::parse_single_statement() {
     StmtPtr stmt = parse_statement();
     if (!check(TokenKind::Eof)) {
-        throw ParseError("unexpected input after statement", peek().location);
+        throw ParseError("entrada inesperada después de la instrucción", peek().location);
     }
     return stmt;
 }
@@ -374,6 +437,15 @@ ExprPtr Parser::parse_primary() {
     if (kind == TokenKind::LBracket) {
         return parse_array_literal();
     }
+    if (kind == TokenKind::LBrace) {
+        return parse_set_literal();
+    }
+    if (kind == TokenKind::EmptySet) {
+        advance();
+        auto node = std::make_unique<SetLiteral>();
+        node->location = tok.location;
+        return node;
+    }
     if (kind == TokenKind::Ident) {
         advance();
         if (check(TokenKind::LParen)) {
@@ -407,7 +479,7 @@ ExprPtr Parser::parse_primary() {
         return make_unary(TokenKind::Sqrt, std::move(operand), tok.location);
     }
 
-    throw ParseError(std::string("unexpected ") + to_string(kind) + " in expression",
+    throw ParseError(std::string(to_string(kind)) + " inesperado en la expresión",
                      tok.location);
 }
 
@@ -423,6 +495,24 @@ ExprPtr Parser::parse_array_literal() {
     expect(TokenKind::RBracket, "']'");
 
     auto node = std::make_unique<ArrayLiteral>();
+    node->elements = std::move(elements);
+    node->location = tok.location;
+    return node;
+}
+
+ExprPtr Parser::parse_set_literal() {
+    // conjunto_lit ::= "{" [ args ] "}" | "∅"  (spec §20.1, v0.2)
+    const Token& tok = expect(TokenKind::LBrace, "'{'");
+    std::vector<ExprPtr> elements;
+    if (!check(TokenKind::RBrace)) {
+        elements.push_back(parse_expression());
+        while (match(TokenKind::Comma)) {
+            elements.push_back(parse_expression());
+        }
+    }
+    expect(TokenKind::RBrace, "'}'");
+
+    auto node = std::make_unique<SetLiteral>();
     node->elements = std::move(elements);
     node->location = tok.location;
     return node;

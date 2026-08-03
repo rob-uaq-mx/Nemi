@@ -1,0 +1,4 @@
+# usa_incluye_dir — demuestra la opción -I: "triple.nemi" no está junto a
+# este archivo (vive en incluye_dir_externo/), así que solo se resuelve si
+# se pasa ese directorio como -I (ver README.md, "-I / --incluye-dir").
+incluye "triple.nemi"

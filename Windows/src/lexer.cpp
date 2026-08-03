@@ -81,6 +81,8 @@ const std::unordered_map<std::string, TokenKind>& keywords() {
         {"para", K::For},
         {"hasta", K::To},
         {"repite", K::Repeat},
+        {"cada", K::Each},
+        {"en", K::Within},
         {"mientras", K::While},
         {"si", K::If},
         {"entonces", K::Then},
@@ -88,6 +90,8 @@ const std::unordered_map<std::string, TokenKind>& keywords() {
         {"regresa", K::Return},
         {"fin", K::End},
         {"incluye", K::Include},
+        {"afirma", K::Assert},
+        {"traza", K::Trace},
         {"mod", K::Mod},
         {"y", K::And},
         {"o", K::Or},
@@ -115,6 +119,10 @@ const std::unordered_map<char32_t, TokenKind>& one_char_ops() {
         {U'≤', K::Le},
         {U'>', K::Gt},
         {U'≥', K::Ge},
+        {U'∈', K::In},
+        {U'∉', K::NotIn},
+        {U'⊆', K::SubsetEq},
+        {U'⊂', K::Subset},
         {U'+', K::Plus},
         {U'−', K::Minus}, {U'-', K::Minus},
         {U'·', K::Times}, {U'*', K::Times},
@@ -132,6 +140,9 @@ const std::unordered_map<char32_t, TokenKind>& one_char_ops() {
         {U'⌉', K::RCeil},
         {U'√', K::Sqrt},
         {U',', K::Comma},
+        {U'{', K::LBrace},
+        {U'}', K::RBrace},
+        {U'∅', K::EmptySet},
     };
     return table;
 }
@@ -225,7 +236,7 @@ Token Lexer::next_token() {
     }
 
     throw LexicalError(
-        "unexpected character '" + encode_utf8(std::u32string(1, c)) + "'",
+        "carácter inesperado '" + encode_utf8(std::u32string(1, c)) + "'",
         start);
 }
 
@@ -260,7 +271,7 @@ Token Lexer::scan_string(SourceLocation start) {
     advance();  // opening quote
     std::u32string chars;
     while (true) {
-        if (at_end()) throw LexicalError("unterminated string literal", start);
+        if (at_end()) throw LexicalError("literal de cadena sin cerrar", start);
         char32_t c = advance();
         if (c == U'"') break;
         if (c == U'\\' && !at_end()) {
@@ -277,7 +288,7 @@ Token Lexer::scan_prose(SourceLocation start) {
     std::u32string chars;
     while (true) {
         if (at_end()) {
-            throw LexicalError("unterminated prose action « … »", start);
+            throw LexicalError("acción en prosa « … » sin cerrar", start);
         }
         char32_t c = advance();
         if (c == U'»') break;

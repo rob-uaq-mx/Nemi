@@ -13,6 +13,9 @@ enum class TokenKind {
     For,         // para
     To,          // hasta
     Repeat,      // repite    (optional sugar)
+    Each,        // cada      (v0.2 §20.3, "para cada ... en ...")
+    Within,      // en        (v0.2 §20.3 -- distinct from In/∈ above, which
+                  //            is set membership; both read "in" in English)
     While,       // mientras
     If,          // si
     Then,        // entonces  (optional sugar)
@@ -20,6 +23,8 @@ enum class TokenKind {
     Return,      // regresa
     End,         // fin
     Include,     // incluye
+    Assert,      // afirma    (v0.2 §21.2, autoverificación)
+    Trace,       // traza     (v0.2 §21.3 [OPC], herramienta de comprensión)
 
     // Operators (the Spanish logical words y/o/no map to And/Or/Not)
     Assign,      // ←  <-
@@ -29,6 +34,10 @@ enum class TokenKind {
     Le,          // ≤  <=
     Gt,          // >
     Ge,          // ≥  >=
+    In,          // ∈   (pertenece; v0.2 §20.2)
+    NotIn,       // ∉   (v0.2 §20.2)
+    SubsetEq,    // ⊆   (subconjunto; v0.2 §20.2)
+    Subset,      // ⊂   (subconjunto propio; v0.2 §20.2)
     Plus,        // +
     Minus,       // −  -
     Times,       // ·  *
@@ -45,6 +54,10 @@ enum class TokenKind {
     LCeil, RCeil,        // ⌈ ⌉
     Sqrt,                // √
     Comma,
+    LBrace, RBrace,      // {  }   (v0.2 §20.1, literal de conjunto)
+    EmptySet,            // ∅      (v0.2 §20.1: literal de conjunto vacío --
+                          //         distinto del uso de ∅ como texto impreso
+                          //         de "sin valor", ver value.cpp)
 
     // Literals and names
     Int, Real, String, Ident,

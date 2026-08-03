@@ -47,6 +47,10 @@ private:
     Environment* env_ = nullptr;   // current call frame
     Value result_;                 // register for the last evaluated expression
     int depth_ = 0;                // call depth (recursion guard, spec §16)
+    int trace_depth_ = 0;          // traza (v0.2 §21.3 [OPC]) activation
+                                    // counter, not a bool: a nested traza
+                                    // inside an already-traced call must not
+                                    // turn tracing off when it finishes
 
     // Core helpers.
     Value invoke(Definition& def, std::vector<Value>& args);
@@ -66,6 +70,7 @@ private:
     void visit(RealLiteral&) override;
     void visit(StringLiteral&) override;
     void visit(ArrayLiteral&) override;
+    void visit(SetLiteral&) override;
     void visit(Variable&) override;
     void visit(Index&) override;
     void visit(Call&) override;
@@ -75,11 +80,14 @@ private:
     // StmtVisitor overrides.
     void visit(Assign&) override;
     void visit(ForLoop&) override;
+    void visit(ForEach&) override;
     void visit(WhileLoop&) override;
     void visit(If&) override;
     void visit(Return&) override;
     void visit(ExprStatement&) override;
     void visit(Prose&) override;
+    void visit(Assert&) override;
+    void visit(Trace&) override;
 };
 
 }  // namespace nemi

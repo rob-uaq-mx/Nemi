@@ -15,8 +15,8 @@ struct SourceLocation {
     std::string to_string() const {
         if (line == 0) return "<unknown>";
         std::string prefix = file.empty() ? "" : file + ", ";
-        if (column == 0) return prefix + "line " + std::to_string(line);
-        return prefix + "line " + std::to_string(line) + ", col " + std::to_string(column);
+        if (column == 0) return prefix + std::to_string(line);
+        return prefix + std::to_string(line) + ":" + std::to_string(column);
     }
 };
 

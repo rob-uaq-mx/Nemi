@@ -14,12 +14,17 @@ namespace nemi {
 // Parse source text into a ready-to-use interpreter. `source_path`, if given,
 // tags error locations with a file name and is the base for resolving any
 // relative `incluye "ruta"` directive in `source` (otherwise: the current
-// working directory).
-Interpreter load(const std::string& source, const std::string& source_path = "");
+// working directory). `search_paths` lists extra directories (the `-I` CLI
+// flag) tried, in order, if an `incluye` target isn't found next to its own
+// file.
+Interpreter load(const std::string& source, const std::string& source_path = "",
+                  const std::vector<std::string>& search_paths = {});
 
 // Parse and merge several .nemi files into one interpreter. Each file's
-// `incluye "ruta"` directives resolve relative to its own directory.
-Interpreter load_files(const std::vector<std::string>& paths);
+// `incluye "ruta"` directives resolve relative to its own directory, falling
+// back to `search_paths` (the `-I` CLI flag), in order, if not found there.
+Interpreter load_files(const std::vector<std::string>& paths,
+                        const std::vector<std::string>& search_paths = {});
 
 // Evaluate a single call/expression (e.g. "máximo([3,9,4],3)") against the
 // loaded definitions and return the resulting value.

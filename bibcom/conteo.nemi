@@ -1,0 +1,108 @@
+# conteo.nemi — Unidad 3
+# Nemi.md §22.2
+
+función factorial(n)
+    resultado ← 1
+    para i ← 2 hasta n
+        resultado ← resultado · i
+    fin para
+    regresa resultado
+fin función
+
+función P(n, r)
+    resultado ← 1
+    para i ← 0 hasta r − 1
+        resultado ← resultado · (n − i)
+    fin para
+    regresa resultado
+fin función
+
+función C(n, r)                        # forma iterativa: evita factoriales enormes
+    resultado ← 1
+    para i ← 1 hasta r
+        resultado ← ⌊(resultado · (n − r + i)) / i⌋
+    fin para
+    regresa resultado
+fin función
+
+función pascal(n)                      # regresa el renglón n: [C(n,0), …, C(n,n)]
+    fila ← [1]
+    para k ← 1 hasta n
+        agrega(fila, C(n, k))
+    fin para
+    regresa fila
+fin función
+
+función multinomial(n, ks)             # ks = [n1, …, nt] con suma n
+    resultado ← factorial(n)
+    para cada k en ks repite
+        resultado ← ⌊resultado / factorial(k)⌋
+    fin para
+    regresa resultado
+fin función
+
+función genera_combinaciones(n, r)     # lista de las C(n,r) combinaciones (orden lexicográfico)
+    s ← arreglo_cero(r)
+    para i ← 1 hasta r
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta C(n, r)
+        m ← r
+        tope ← n
+        mientras s[m] = tope
+            m ← m − 1
+            tope ← tope − 1
+        fin mientras
+        s[m] ← s[m] + 1
+        para j ← m + 1 hasta r
+            s[j] ← s[j − 1] + 1
+        fin para
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+función genera_permutaciones(n)        # lista de las n! permutaciones (orden lexicográfico)
+    s ← arreglo_cero(n)
+    para i ← 1 hasta n
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta factorial(n)
+        m ← n − 1
+        mientras s[m] > s[m + 1]
+            m ← m − 1
+        fin mientras
+        k ← n
+        mientras s[m] > s[k]
+            k ← k − 1
+        fin mientras
+        tmp ← s[m]
+        s[m] ← s[k]
+        s[k] ← tmp
+        p ← m + 1
+        q ← n
+        mientras p < q
+            tmp ← s[p]
+            s[p] ← s[q]
+            s[q] ← tmp
+            p ← p + 1
+            q ← q − 1
+        fin mientras
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma factorial(5) = 120
+afirma P(10, 4) = 5040
+afirma C(52, 5) = 2598960
+afirma C(8, 4) = 70
+afirma pascal(4) = [1, 4, 6, 4, 1]
+afirma multinomial(11, [1, 4, 4, 2]) = 34650
+afirma long(genera_combinaciones(6, 4)) = 15
+afirma long(genera_permutaciones(4)) = 24

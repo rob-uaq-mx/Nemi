@@ -1,0 +1,41 @@
+# conjuntos.nemi — Unidad 1 (sobre las primitivas de Conjunto, §20.2)
+# Nemi.md §22.3
+
+función complemento(A, U)
+    regresa diferencia(U, A)
+fin función
+
+función subconjunto_propio(A, B)
+    regresa subconjunto(A, B) ∧ ¬(A = B)
+fin función
+
+función potencia(A)                    # conjunto potencia P(A)
+    res ← { ∅ }                        # conjunto que contiene al conjunto vacío
+    para cada x en A repite
+        nuevos ← ∅                     # se acumula aparte para no mutar 'res' al iterar
+        para cada S en res repite
+            agrega(nuevos, union(S, {x}))
+        fin para
+        para cada T en nuevos repite
+            agrega(res, T)
+        fin para
+    fin para
+    regresa res
+fin función
+
+función producto_cartesiano(A, B)      # conjunto de pares [a, b]
+    res ← ∅
+    para cada a en A repite
+        para cada b en B repite
+            agrega(res, [a, b])
+        fin para
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma cardinalidad({3, 1, 2, 1}) = 3
+afirma (2 ∈ {1, 2, 3}) = 1
+afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma cardinalidad(potencia({1, 2, 3})) = 8
+afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6

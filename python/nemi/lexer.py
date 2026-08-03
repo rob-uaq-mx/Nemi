@@ -23,6 +23,8 @@ _KEYWORDS = {
     "para": TokenKind.FOR,
     "hasta": TokenKind.TO,
     "repite": TokenKind.REPEAT,
+    "cada": TokenKind.EACH,
+    "en": TokenKind.WITHIN,
     "mientras": TokenKind.WHILE,
     "si": TokenKind.IF,
     "entonces": TokenKind.THEN,
@@ -30,6 +32,8 @@ _KEYWORDS = {
     "regresa": TokenKind.RETURN,
     "fin": TokenKind.END,
     "incluye": TokenKind.INCLUDE,
+    "afirma": TokenKind.ASSERT,
+    "traza": TokenKind.TRACE,
     "mod": TokenKind.MOD,
     "y": TokenKind.AND,
     "o": TokenKind.OR,
@@ -53,6 +57,10 @@ _ONE_CHAR = {
     "≤": TokenKind.LE,
     ">": TokenKind.GT,
     "≥": TokenKind.GE,
+    "∈": TokenKind.IN,
+    "∉": TokenKind.NOTIN,
+    "⊆": TokenKind.SUBSETEQ,
+    "⊂": TokenKind.SUBSET,
     "+": TokenKind.PLUS,
     "−": TokenKind.MINUS, "-": TokenKind.MINUS,
     "·": TokenKind.TIMES, "*": TokenKind.TIMES,
@@ -70,6 +78,9 @@ _ONE_CHAR = {
     "⌉": TokenKind.RCEIL,
     "√": TokenKind.SQRT,
     ",": TokenKind.COMMA,
+    "{": TokenKind.LBRACE,
+    "}": TokenKind.RBRACE,
+    "∅": TokenKind.EMPTYSET,
 }
 
 _COMMENT_CHARS = ("#", "▷")
@@ -156,7 +167,7 @@ class Lexer:
             self._advance()
             return Token(_ONE_CHAR[ch], None, start)
 
-        raise LexicalError(f"unexpected character {ch!r}", start)
+        raise LexicalError(f"carácter inesperado {ch!r}", start)
 
     # -- token scanners -------------------------------------------------
     def _number(self, start):
@@ -190,7 +201,7 @@ class Lexer:
         chars = []
         while True:
             if self._at_end():
-                raise LexicalError("unterminated string literal", start)
+                raise LexicalError("literal de cadena sin cerrar", start)
             ch = self._advance()
             if ch == '"':
                 break
@@ -207,7 +218,7 @@ class Lexer:
         chars = []
         while True:
             if self._at_end():
-                raise LexicalError("unterminated prose action « … »", start)
+                raise LexicalError("acción en prosa « … » sin cerrar", start)
             ch = self._advance()
             if ch == "»":
                 break

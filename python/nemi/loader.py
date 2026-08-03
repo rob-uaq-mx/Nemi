@@ -26,28 +26,47 @@ def _read_file(path):
         raise LexicalError(f"no se pudo abrir el archivo: {path}") from exc
 
 
-def tokenize_with_includes(source, base_path=""):
+def _resolve_include(base_dir, rel, search_paths):
+    """Find the file an `incluye "rel"` should splice in.
+
+    Tries `base_dir` first (today's only behavior, always wins if the file
+    is there); then each directory in `search_paths`, in order (the `-I`
+    CLI flag). Falls through to the `base_dir` candidate if nothing exists,
+    so the caller's usual open()-fails error path fires unchanged.
+    """
+    candidate = os.path.join(base_dir, rel)
+    if os.path.isfile(candidate):
+        return candidate
+    for directory in search_paths:
+        candidate = os.path.join(directory, rel)
+        if os.path.isfile(candidate):
+            return candidate
+    return os.path.join(base_dir, rel)
+
+
+def tokenize_with_includes(source, base_path="", search_paths=()):
     """Tokenize `source`, splicing in `incluye "ruta"` targets recursively.
 
     Relative `incluye` paths resolve against the directory of `base_path`;
     if `base_path` is empty (an in-memory source with no file of its own,
     e.g. a `--llama` expression), they resolve against the current working
-    directory.
+    directory. If not found there, each directory in `search_paths` (the
+    `-I` CLI flag) is tried in order.
     """
     active = [os.path.realpath(base_path)] if base_path else []
     base_dir = os.path.dirname(base_path) if base_path else "."
-    return _expand(source, base_dir or ".", base_path, active)
+    return _expand(source, base_dir or ".", base_path, active, search_paths)
 
 
-def tokenize_file_with_includes(path):
+def tokenize_file_with_includes(path, search_paths=()):
     """Read `path` from disk and tokenize it with tokenize_with_includes."""
     source = _read_file(path)
     active = [os.path.realpath(path)]
     base_dir = os.path.dirname(path) or "."
-    return _expand(source, base_dir, path, active)
+    return _expand(source, base_dir, path, active, search_paths)
 
 
-def _expand(source, base_dir, file_tag, active):
+def _expand(source, base_dir, file_tag, active, search_paths=()):
     tokens = Lexer(source, file_tag).tokenize()
     result = []
     i = 0
@@ -66,7 +85,7 @@ def _expand(source, base_dir, file_tag, active):
         rel = tokens[i + 1].value
         i += 2
 
-        resolved = os.path.join(base_dir, rel)
+        resolved = _resolve_include(base_dir, rel, search_paths)
         key = os.path.realpath(resolved)
         if key in active:
             raise LexicalError(
@@ -84,7 +103,8 @@ def _expand(source, base_dir, file_tag, active):
 
         active.append(key)
         included = _expand(
-            included_source, os.path.dirname(resolved) or ".", resolved, active
+            included_source, os.path.dirname(resolved) or ".", resolved, active,
+            search_paths,
         )
         active.pop()
 

@@ -19,8 +19,14 @@ from .errors import ParseError
 from .tokens import TokenKind as T
 
 _COMPARISONS = frozenset(
-    {T.EQ, T.NE, T.LT, T.LE, T.GT, T.GE}
+    {T.EQ, T.NE, T.LT, T.LE, T.GT, T.GE, T.IN, T.WITHIN, T.NOTIN, T.SUBSETEQ, T.SUBSET}
 )
+# T.WITHIN ("en") is a word-only synonym for T.IN (∈) here -- it has no
+# ASCII-symbol equivalent otherwise, unlike !=/<=/>=. It stays a single
+# lexer token reused in two grammar positions: this one (membership) and
+# right after "cada" in _for_each (loop syntax) -- no ambiguity between the
+# two because _for_each consumes it by direct position, never through this
+# general comparison production.
 
 
 class Parser:
@@ -52,7 +58,7 @@ class Parser:
         tok = self._peek()
         if tok.kind is not kind:
             raise ParseError(
-                f"expected {what}, found {tok.kind.name}", tok.location
+                f"se esperaba {what}, se encontró {tok.kind.name}", tok.location
             )
         return self._advance()
 
@@ -77,10 +83,10 @@ class Parser:
             is_function = False
         else:
             raise ParseError(
-                "expected 'función' or 'procedimiento'", tok.location
+                "se esperaba 'función' o 'procedimiento'", tok.location
             )
         self._advance()
-        name = self._expect(T.IDENT, "definition name").value
+        name = self._expect(T.IDENT, "nombre de definición").value
         self._expect(T.LPAREN, "'('")
         params = self._params()
         self._expect(T.RPAREN, "')'")
@@ -88,7 +94,7 @@ class Parser:
         self._expect(T.END, "'fin'")
         # closing keyword must match the opener
         closer = T.FUNCTION if is_function else T.PROCEDURE
-        self._expect(closer, "'función'/'procedimiento' after 'fin'")
+        self._expect(closer, "'función'/'procedimiento' después de 'fin'")
         return ast.Definition(name, params, body, is_function, tok.location)
 
     def _params(self):
@@ -96,7 +102,7 @@ class Parser:
         if self._check(T.IDENT):
             params.append(self._advance().value)
             while self._match(T.COMMA):
-                params.append(self._expect(T.IDENT, "parameter name").value)
+                params.append(self._expect(T.IDENT, "nombre de parámetro").value)
         return params
 
     # -- blocks and statements -----------------------------------------
@@ -113,6 +119,11 @@ class Parser:
     def _statement(self):
         kind = self._peek().kind
         if kind is T.FOR:
+            # disambiguate 'para cada ... en ...' from 'para ident <- ... hasta ...'
+            # (one token of extra lookahead; EOF always follows any real
+            # token, so self._i + 1 is always in bounds here)
+            if self._tokens[self._i + 1].kind is T.EACH:
+                return self._for_each()
             return self._for()
         if kind is T.WHILE:
             return self._while()
@@ -123,16 +134,35 @@ class Parser:
         if kind is T.PROSE:
             tok = self._advance()
             return ast.Prose(tok.value, tok.location)
+        if kind is T.ASSERT:
+            return self._assert()
+        if kind is T.TRACE:
+            return self._trace()
         if kind is T.IDENT:
             return self._assign_or_call()
         tok = self._peek()
         raise ParseError(
-            f"unexpected {tok.kind.name} at start of statement", tok.location
+            f"{tok.kind.name} inesperado al inicio de la instrucción", tok.location
         )
+
+    def _assert(self):
+        # aserción ::= "afirma" expresión [ "," cadena ]   (spec §21.2, v0.2)
+        tok = self._advance()  # afirma
+        condition = self._expression()
+        message = None
+        if self._match(T.COMMA):
+            message = self._expect(T.STRING, "cadena de mensaje de la aserción").value
+        return ast.Assert(condition, message, tok.location)
+
+    def _trace(self):
+        # rastreo ::= "traza" expresión   (spec §21.3, v0.2 [OPC])
+        tok = self._advance()  # traza
+        expression = self._expression()
+        return ast.Trace(expression, tok.location)
 
     def _for(self):
         tok = self._advance()  # para
-        var = self._expect(T.IDENT, "loop variable").value
+        var = self._expect(T.IDENT, "variable de ciclo").value
         self._expect(T.ASSIGN, "'←'")
         start = self._expression()
         self._expect(T.TO, "'hasta'")
@@ -140,15 +170,29 @@ class Parser:
         self._match(T.REPEAT)  # optional 'repite'
         body = self._block()
         self._expect(T.END, "'fin'")
-        self._expect(T.FOR, "'para' after 'fin'")
+        self._expect(T.FOR, "'para' después de 'fin'")
         return ast.ForLoop(var, start, end, body, tok.location)
+
+    def _for_each(self):
+        # ciclo_cada ::= "para" "cada" ident "en" expresión [ "repite" ]
+        #                bloque "fin" "para"   (spec §20.3, v0.2)
+        tok = self._advance()  # para
+        self._advance()  # cada
+        var = self._expect(T.IDENT, "variable de ciclo").value
+        self._expect(T.WITHIN, "'en'")
+        collection = self._expression()
+        self._match(T.REPEAT)  # optional 'repite'
+        body = self._block()
+        self._expect(T.END, "'fin'")
+        self._expect(T.FOR, "'para' después de 'fin'")
+        return ast.ForEach(var, collection, body, tok.location)
 
     def _while(self):
         tok = self._advance()  # mientras
         condition = self._expression()
         body = self._block()
         self._expect(T.END, "'fin'")
-        self._expect(T.WHILE, "'mientras' after 'fin'")
+        self._expect(T.WHILE, "'mientras' después de 'fin'")
         return ast.WhileLoop(condition, body, tok.location)
 
     def _if(self):
@@ -160,7 +204,7 @@ class Parser:
         if self._match(T.ELSE):  # 'alt'
             else_body = self._block()
         self._expect(T.END, "'fin'")
-        self._expect(T.IF, "'si' after 'fin'")
+        self._expect(T.IF, "'si' después de 'fin'")
         return ast.If(condition, then_body, else_body, tok.location)
 
     def _return(self):
@@ -181,7 +225,7 @@ class Parser:
         while self._match(T.LBRACKET):
             indices.append(self._expression())
             self._expect(T.RBRACKET, "']'")
-        self._expect(T.ASSIGN, "'←' (assignment) or '(' (call)")
+        self._expect(T.ASSIGN, "'←' (asignación) o '(' (llamada)")
         value = self._expression()
         return ast.Assign(name, indices, value, tok.location)
 
@@ -268,6 +312,11 @@ class Parser:
             return ast.StringLiteral(tok.value, tok.location)
         if kind is T.LBRACKET:
             return self._array_literal()
+        if kind is T.LBRACE:
+            return self._set_literal()
+        if kind is T.EMPTYSET:
+            self._advance()
+            return ast.SetLiteral([], tok.location)
         if kind is T.IDENT:
             self._advance()
             if self._check(T.LPAREN):
@@ -294,7 +343,7 @@ class Parser:
             return ast.Unary(T.SQRT, operand, tok.location)
 
         raise ParseError(
-            f"unexpected {kind.name} in expression", tok.location
+            f"{kind.name} inesperado en la expresión", tok.location
         )
 
     def _array_literal(self):
@@ -306,6 +355,17 @@ class Parser:
                 elements.append(self._expression())
         self._expect(T.RBRACKET, "']'")
         return ast.ArrayLiteral(elements, tok.location)
+
+    def _set_literal(self):
+        # conjunto_lit ::= "{" [ args ] "}" | "∅"  (spec §20.1, v0.2)
+        tok = self._expect(T.LBRACE, "'{'")
+        elements = []
+        if not self._check(T.RBRACE):
+            elements.append(self._expression())
+            while self._match(T.COMMA):
+                elements.append(self._expression())
+        self._expect(T.RBRACE, "'}'")
+        return ast.SetLiteral(elements, tok.location)
 
     def _finish_call(self, name, location):
         self._expect(T.LPAREN, "'('")

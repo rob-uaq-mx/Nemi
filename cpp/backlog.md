@@ -16,10 +16,19 @@ además con **tres tool­chains reales** (clang++, MSVC 19.42 vía Visual Studio
 2022, y — sin probar localmente, ver Fase 6 — g++ en el workflow de CI); el
 CLI tiene paridad con `python -m nemi`. Quedan dos gaps conocidos y
 documentados (ver «Riesgos / notas»): `argv` UTF-8 en Windows y la indexación
-de cadenas por byte, no por code point. Este repositorio **no es (todavía) un
-repositorio git** — el workflow de CI (`.github/workflows/ci.yml`) queda listo
-para cuando se inicialice y se suba a GitHub; mientras tanto, `check_all.ps1`
-en la raíz corre las mismas comprobaciones en local.
+de cadenas por byte, no por code point.
+
+> **Nota (2026-08-02):** este backlog cubre solo el **núcleo v0.1** (Fases
+> 0–6, spec `Nemi.md` §1–§18); el 16/16 de arriba es ese alcance específico.
+> Desde entonces se agregó la **biblioteca común v0.2** (`Conjunto`,
+> `para cada`, `afirma`/`traza`, primitivas de cadena y los 6 módulos reales
+> de [`../bibcom`](../bibcom)) — ver [`../backlog_v0.2.md`](../backlog_v0.2.md)
+> para ese seguimiento. `tests/corpus_test.cpp` ahora cubre ambos:
+> **82/82** en total.
+
+El repositorio ya es un repositorio git con remoto en GitHub (el workflow de
+CI en `.github/workflows/ci.yml` corre normalmente); `check_all.ps1` en la
+raíz corre las mismas comprobaciones en local, sin necesitar git.
 
 ## Cómo usar este documento
 - El orden de las fases es el recomendado (cada una desbloquea la siguiente).

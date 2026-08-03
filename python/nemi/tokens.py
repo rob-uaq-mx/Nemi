@@ -16,6 +16,12 @@ class TokenKind(enum.Enum):
     FOR = "for"                # para
     TO = "to"                  # hasta
     REPEAT = "repeat"          # repite   (optional syntactic sugar)
+    EACH = "each"              # cada     (v0.2 §20.3, "para cada ... en ...")
+    WITHIN = "within"          # en       (v0.2 §20.3, "para cada ... en ...";
+                                #           also usable as an ASCII-friendly
+                                #           word for membership, a synonym of
+                                #           IN/∈ at comparison level -- see
+                                #           _COMPARISONS in parser.py)
     WHILE = "while"            # mientras
     IF = "if"                  # si
     THEN = "then"              # entonces (optional syntactic sugar)
@@ -23,6 +29,9 @@ class TokenKind(enum.Enum):
     RETURN = "return"          # regresa
     END = "end"                # fin
     INCLUDE = "include"        # incluye
+    ASSERT = "assert"          # afirma   (v0.2 §21.2, autoverificación)
+    TRACE = "trace"            # traza    (v0.2 §21.3 [OPC], herramienta de
+                                #           comprensión)
 
     # --- Operators (logical words map here too: y/o/no, and/or/not) -----
     ASSIGN = "assign"          # ←  or  <-
@@ -32,6 +41,10 @@ class TokenKind(enum.Enum):
     LE = "le"                  # ≤  or  <=
     GT = "gt"                  # >
     GE = "ge"                  # ≥  or  >=
+    IN = "in"                  # ∈  (pertenece; v0.2 §20.2)
+    NOTIN = "notin"            # ∉  (v0.2 §20.2)
+    SUBSETEQ = "subseteq"      # ⊆  (subconjunto; v0.2 §20.2)
+    SUBSET = "subset"          # ⊂  (subconjunto propio; v0.2 §20.2)
     PLUS = "plus"              # +
     MINUS = "minus"            # −  or  -
     TIMES = "times"            # ·  or  *
@@ -52,6 +65,11 @@ class TokenKind(enum.Enum):
     RCEIL = "rceil"            # ⌉
     SQRT = "sqrt"              # √
     COMMA = "comma"            # ,
+    LBRACE = "lbrace"          # {   (v0.2 §20.1, literal de conjunto)
+    RBRACE = "rbrace"          # }   (v0.2 §20.1)
+    EMPTYSET = "emptyset"      # ∅   (v0.2 §20.1: literal de conjunto vacío --
+                                #      distinto del uso de ∅ como texto impreso
+                                #      de "sin valor", ver values.format_value)
 
     # --- Literals and names --------------------------------------------
     INT = "int"                # 42

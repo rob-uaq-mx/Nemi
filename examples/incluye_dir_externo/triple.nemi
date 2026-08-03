@@ -1,0 +1,6 @@
+# triple — vive fuera de examples/, para probar la resolución vía -I
+# (spec no cambia; -I es una opción de CLI, ver README.md).
+
+función triple(x)
+    regresa 3 · x
+fin función

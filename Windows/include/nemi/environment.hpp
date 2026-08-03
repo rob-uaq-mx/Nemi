@@ -22,7 +22,7 @@ public:
     const Value& get(const std::string& name) const {
         auto it = vars_.find(name);
         if (it == vars_.end()) {
-            throw ExecutionError("undefined variable: " + name);
+            throw ExecutionError("variable no definida: " + name);
         }
         return it->second;
     }

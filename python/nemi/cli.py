@@ -5,6 +5,7 @@ Because Nemi is a Spanish-keyword language, the CLI options are Spanish too:
     python -m nemi FILE.nemi [FILE2.nemi ...] [--llama "expr" ...]
     python -m nemi FILE.nemi --lexemas       # dump the token stream
     python -m nemi FILE.nemi --asa            # dump the parsed definitions (AST)
+    python -m nemi FILE.nemi -I DIR           # extra search path for 'incluye'
 
 Loading a file runs its top-level statements (the "script body") in source
 order; a bare top-level call is evaluated for effect but not printed, so use
@@ -57,6 +58,13 @@ def _build_parser():
         "--asa", action="store_true",
         help="imprime el árbol sintáctico abstracto (ASA) y termina",
     )
+    parser.add_argument(
+        "-I", "--incluye-dir", action="append", default=[], metavar="DIR",
+        dest="incluye_dir",
+        help="directorio adicional donde buscar los archivos de 'incluye' "
+             "(repetible; se prueba en el orden dado, después del directorio "
+             "del archivo que incluye)",
+    )
     return parser
 
 
@@ -68,17 +76,18 @@ def main(argv=None):
     try:
         if args.lexemas:
             for path in args.archivos:
-                for tok in tokenize_file_with_includes(path):
+                for tok in tokenize_file_with_includes(path, args.incluye_dir):
                     print(tok)
             return 0
 
         if args.asa:
             for path in args.archivos:
-                for defn in parse(tokenize_file_with_includes(path)).definitions:
+                tokens = tokenize_file_with_includes(path, args.incluye_dir)
+                for defn in parse(tokens).definitions:
                     print(defn)
             return 0
 
-        interp = load_files(args.archivos)
+        interp = load_files(args.archivos, args.incluye_dir)
         interp.run_program()  # execute any top-level statements (the script body)
         for expr in args.llama:
             result = run_call(interp, expr)

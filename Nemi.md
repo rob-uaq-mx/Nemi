@@ -1,5 +1,7 @@
 # Nemi — el pseudolenguaje de algoritmos
 
+> **Especificación versión 0.2** · véase el historial de versiones en §24.
+
 **Nemi** (del náhuatl *nemi*, «andar, ejecutarse») es el pseudolenguaje empleado
 en las notas del curso para presentar algoritmos. Este documento lo describe y
 sirve además como **especificación** para construir su intérprete. Los archivos de
@@ -219,6 +221,14 @@ primaria       ::= número | ident | llamada | cadena
                  | "√" expr_unaria ;
 ```
 
+> **Extensión v0.2 (§20).** La biblioteca estándar amplía esta gramática con
+> literales de lista/conjunto (`lista_lit`, `conjunto_lit` en `primaria`), los
+> operadores de conjunto `∈ ∉ ⊆ ⊂` en `op_comp`, el ciclo `ciclo_cada`
+> (`para cada … en …`) en `instrucción`, y las instrucciones `afirma`/`traza`.
+> Las producciones exactas están en §20–§21. Esta sección §10 documenta el
+> **núcleo (v0.1)**; las adiciones son opcionales para un intérprete que solo
+> ejecute el corpus §17.
+
 ## 11. Tipos y operadores
 
 | Tipo | Notas |
@@ -229,6 +239,7 @@ primaria       ::= número | ident | llamada | cadena
 | Sucesión / arreglo | **índice base 1**, mutable. |
 | Matriz | 2D, base 1 (`W[i][j]`). |
 | Cadena | sucesión de símbolos; indexable en base 1. |
+| Conjunto *(v0.2)* | no ordenado, sin duplicados; lo añade la biblioteca estándar (§20.2). |
 
 **Precedencia** (de mayor a menor): `¬`/`no` y unario `−`  ▸  `·` `/` `mod`  ▸
 `+` `−`  ▸  comparaciones  ▸  `∧`/`y`  ▸  `∨`/`o`.
@@ -524,13 +535,744 @@ fin procedimiento
 ## 18. Preguntas abiertas para el autor del curso
 
 1. ¿La sintaxis concreta debe **parecerse al PDF** (sangría, símbolos) o priorizar
-   el análisis (cierres explícitos)? Aquí se eligieron cierres explícitos.
+   el análisis (cierres explícitos)? **Resuelta:** cierres explícitos.
 2. ¿Se desea un **modo booleano** explícito para la Unidad 4, o basta con resolver
-   `+`/`·` por tipo?
+   `+`/`·` por tipo? **Resuelta:** basta el despacho por tipo (no hay modo booleano
+   separado).
 3. ¿El intérprete debe **ejecutar** los algoritmos geométricos (trominos) o basta
-   con el núcleo aritmético/estructural?
-4. ¿Se quiere E/S interactiva (`leer`, `imprime`) además de `regresa`?
-5. ¿Índices siempre base 1, o configurable?
+   con el núcleo aritmético/estructural? **Resuelta:** las acciones en prosa `«…»`
+   son no ejecutables (§14); basta el núcleo aritmético/estructural.
+4. ¿Se quiere E/S interactiva (`leer`, `imprime`) además de `regresa`? **Resuelta:**
+   sí para salida (`imprime`, §21.1); no hay entrada interactiva.
+5. ¿Índices siempre base 1, o configurable? **Resuelta:** siempre base 1, no
+   configurable.
+
+> **Nota.** Todas las preguntas de §18 quedaron resueltas y las respuestas están
+> reflejadas arriba (las 2, 3 y 5 ya se documentaban en el `README` del repositorio;
+> la 4 se especifica en §21.1). La biblioteca estándar y las extensiones que exige
+> se especifican en §19–§23.
+
+---
+
+## 19. Biblioteca estándar de Nemi (`stdlib`)
+
+### 19.1 Motivación
+
+El curso reutiliza sin cesar un puñado de funciones (`C(n,r)`, `factorial`,
+`exp_mod`, `mcd`, generadores de permutaciones/combinaciones, operaciones de
+conjuntos…). En vez de que cada estudiante las reescriba —con el riesgo de errar
+un `⌊ ⌋` o una condición—, se provee una **biblioteca estándar**: un conjunto de
+archivos `.nemi` que se traen con `incluye` y funciones de núcleo (primitivas)
+provistas por el intérprete. Objetivo pedagógico: que el estudiante pueda
+**verificar su tarea en una línea** (`imprime(C(52,5))`) y que las definiciones
+de la biblioteca sean **legibles** (material de estudio), no cajas negras.
+
+### 19.2 Arquitectura en dos capas
+
+1. **Núcleo (primitivas del intérprete).** Cosas que no se pueden —o no conviene—
+   escribir en el propio Nemi: el tipo `Conjunto` y sus operaciones, listas
+   dinámicas (`agrega`), E/S (`imprime`), aserciones (`afirma`), manejo de
+   cadenas, copia profunda. Se especifican en §20 y §21. Esto **amplía** el
+   catálogo tentativo de §15.
+2. **Biblioteca en Nemi (`stdlib/*.nemi`).** Todo lo demás se escribe en el
+   propio lenguaje sobre el núcleo, y se distribuye como archivos `.nemi`
+   incluibles. El código completo y sus pruebas están en §22.
+
+**Regla de oro para el implementador:** si una función de §22 aparece con cuerpo
+Nemi, se implementa **cargando ese archivo**, no en el lenguaje anfitrión. Solo lo
+listado en §20–§21 es primitivo.
+
+### 19.3 Módulos
+
+| Archivo | Unidad | Contenido |
+|---|---|---|
+| `teoria_numeros.nemi` | 2 | `mcd`, `mcm`, `primo`, `exp_mod`, `euclides_extendido`, `mod_inv` |
+| `conteo.nemi` | 3 | `factorial`, `P`, `C`, `pascal`, `multinomial`, `genera_combinaciones`, `genera_permutaciones` |
+| `conjuntos.nemi` | 1 | `complemento`, `subconjunto_propio`, `potencia`, `producto_cartesiano` |
+| `relaciones.nemi` | 1 | `es_refleja`, `es_simetrica`, `es_transitiva`, `es_antisimetrica`, `composicion`, `cerradura_transitiva` |
+| `booleana.nemi` | 4 | `nand`, `nor`, `xor`, `xnor`, `minterminos`, `equivalentes`, `evalua` |
+| `cadenas.nemi` | 1–2 | `invierte`, `prefijo`, `sufijo`, `a_binario`, `desde_base` |
+
+Un archivo `stdlib.nemi` que solo hace `incluye` de todos los anteriores permite
+`incluye "stdlib.nemi"` de una vez.
+
+---
+
+## 20. Extensiones del lenguaje requeridas por la biblioteca
+
+Estas son **adiciones al núcleo** (no estaban en la Parte II). Cada una indica su
+prioridad: **[REQ]** = requerida por la biblioteca; **[OPC]** = mejora, no
+bloquea.
+
+### 20.1 Literales de lista y de conjunto [REQ]
+
+La gramática de §10 usaba `[ ]` solo para **indexar**; los literales `[1,2,3]`
+—que ya aparecen en las anotaciones de prueba de §17 y en las llamadas del
+corpus— no estaban formalizados. La versión 0.2 **extiende** `primaria` (§10) con
+estas dos producciones (la nota al pie de §10 remite aquí):
+
+```ebnf
+primaria    ::= número | ident | llamada | cadena
+              | "(" expresión ")"
+              | "⌊" expresión "⌋" | "⌈" expresión "⌉"
+              | "√" expr_unaria
+              | lista_lit | conjunto_lit ;          (* nuevo *)
+lista_lit   ::= "[" [ args ] "]" ;                  (* [], [1,2,3], [[0,1],[1,0]] *)
+conjunto_lit::= "{" [ args ] "}" | "∅" ;            (* {}, {1,2,3}, ∅ *)
+```
+
+- Una **lista** (arreglo) es ordenada, mutable, indexada en base 1; puede anidar
+  (matrices = listas de listas). `[]` es la lista vacía.
+- Un **conjunto** es no ordenado y **sin duplicados**. `{}` y `∅` son el conjunto
+  vacío. Al construir `{3,1,2,1}` los duplicados se colapsan → `{1,2,3}`.
+
+> **Doble uso del glifo `∅` (decidido: se acepta y se documenta).** El mismo
+> símbolo `∅` cumple dos papeles según el contexto: como **entrada**, es el
+> literal del conjunto vacío (arriba); como **salida**, es la representación
+> impresa del valor «sin valor» (lo que devuelve un procedimiento o un `regresa`
+> sin expresión; véase la tabla de §21.1). No hay ambigüedad de análisis
+> sintáctico —uno ocurre en el código fuente, el otro solo en la salida de
+> `imprime`—, pero conviene que el estudiante lo sepa: si ve `∅` impreso por
+> `imprime(unProcedimiento())`, significa «no hubo valor», no «conjunto vacío»
+> (un conjunto vacío se imprime `{}`, §21.1).
+- Los elementos de una lista o conjunto pueden ser enteros, reales, bits, cadenas,
+  **listas** u **otros conjuntos** (necesario para pares ordenados `[a,b]` en
+  relaciones y para el conjunto potencia).
+
+### 20.2 Tipo `Conjunto` y sus primitivas [REQ]
+
+La versión 0.2 **añade el tipo `Conjunto`** (ya listado como fila *v0.2* en la
+tabla de §11). Operaciones primitivas:
+
+| Primitiva | Resultado |
+|---|---|
+| `x ∈ A` | bit `1`/`0` (pertenencia). También `x ∉ A`. Alternativas para `∈`: la palabra **`en`** (`x en A`) o la función `pertenece(x, A)` — ver nota siguiente |
+| `A ⊆ B` | bit (subconjunto). Alias: `subconjunto(A, B)` |
+| `A ⊂ B` | bit (subconjunto propio) |
+| `union(A, B)` | `A ∪ B` |
+| `interseccion(A, B)` | `A ∩ B` |
+| `diferencia(A, B)` | `A ∖ B` |
+| `cardinalidad(A)` | número de elementos (entero). También `long(A)` |
+| `agrega(A, x)` | inserta `x` en `A` **in situ** (idempotente: si ya está, no cambia); muta por referencia, sin valor útil de retorno |
+
+Los operadores de comparación de conjuntos `∈ ∉ ⊆ ⊂` **extienden** `op_comp`
+(§10), pues **producen un bit** y encajan en el nivel de las comparaciones.
+`∈` tiene además la palabra **`en`** como equivalente directo, sin necesitar
+teclado Unicode: `x en A` ≡ `x ∈ A`. Reutiliza la misma palabra clave que
+introduce `para cada … en …` (§20.3) sin ambigüedad de gramática — la
+producción `ciclo_cada` consume `en` en una posición fija, justo después de
+`cada ident`, nunca a través de `op_comp`, así que ambos usos conviven en la
+misma gramática sin conflicto. Los demás operadores de conjunto no tienen
+palabra equivalente: para `∉ ⊆ ⊂`, sin teclado Unicode, se usan las funciones
+`pertenece` y `subconjunto` (`∉` también se obtiene negando: `¬pertenece(x, A)`).
+(Las operaciones binarias `∪ ∩ ∖` se ofrecen como **funciones**, no
+operadores, para no ampliar la precedencia; `union`, `interseccion`,
+`diferencia`.)
+
+**Igualdad estructural [REQ].** `=` y `≠` operan por **valor** sobre datos
+compuestos:
+- **conjuntos:** iguales si tienen exactamente los mismos elementos (sin importar
+  orden), comparando recursivamente;
+- **listas:** iguales si tienen la misma longitud y elementos iguales **en el
+  mismo orden**;
+- **cadenas:** iguales carácter a carácter.
+
+**Orden canónico [REQ].** Para impresión determinista (§21.1) e iteración
+(§20.3), un conjunto se recorre en orden canónico: números en orden ascendente;
+cadenas en orden lexicográfico; elementos compuestos (listas/conjuntos) después de
+los escalares, ordenados por su representación impresa. (El objetivo es solo
+**reproducibilidad**, no un orden matemático profundo.)
+
+### 20.3 Ciclo `para cada … en …` [REQ]
+
+Itera sobre los elementos de un conjunto (en orden canónico) o de una lista (en
+orden de índice). Nuevas palabras clave: **`cada`**, **`en`**.
+
+```ebnf
+ciclo_cada  ::= "para" "cada" ident "en" expresión [ "repite" ]
+                bloque "fin" "para" ;
+```
+
+```
+para cada x en A repite
+    ⟨usa x⟩
+fin para
+```
+
+No se debe mutar la colección que se está recorriendo dentro del ciclo (para eso,
+constrúyase otra colección y fusiónese después; véase `potencia` en §22.3).
+
+### 20.4 Listas dinámicas: `agrega`, `copia`, ceros [REQ]
+
+| Primitiva | Semántica |
+|---|---|
+| `agrega(a, x)` | si `a` es **lista**, **anexa** `x` al final (crece la longitud); muta por referencia. (Sobre **conjunto**: inserta, §20.2.) |
+| `long(a)` | longitud de una lista / de una cadena / cardinalidad de un conjunto |
+| `copia(a)` | **copia profunda** (recursiva) de una lista/matriz/conjunto; indispensable para guardar instantáneas de un arreglo que luego se muta |
+| `arreglo_cero(n)` | lista de `n` ceros, `[0,0,…,0]` (base 1) |
+| `matriz_cero(m, n)` | matriz `m×n` de ceros |
+
+Ejemplo del patrón «acumular resultados» (usado por los generadores de §22.2):
+
+```
+res ← []
+agrega(res, copia(s))        ▷ copia: s se mutará en la siguiente iteración
+```
+
+### 20.5 Retorno de varios valores mediante lista [REQ, sin tipo nuevo]
+
+`regresa` sigue devolviendo **un** valor. Cuando una función necesita entregar
+varios (p. ej. `euclides_extendido → (d, s, t)`), **devuelve una lista** y quien
+llama la desempaca por índice:
+
+```
+t ← euclides_extendido(240, 46)   ▷ t = [d, s, t]
+d ← t[1]                          ▷ base 1
+```
+
+No se introduce un tipo «tupla»: una lista de longitud fija cumple el papel. Un
+**par ordenado** (para relaciones/producto cartesiano) es una lista de dos
+elementos `[a, b]`.
+
+### 20.6 Funciones de primera clase [OPC]
+
+Permitir pasar una **función como argumento** habilita azúcar agradable como
+`tabla_verdad(mayoria, 3)`. **No es requerida:** el módulo `booleana.nemi` (§22.5)
+trabaja sobre **arreglos de tabla de verdad** (un arreglo de `2ⁿ` bits), lo que
+evita por completo el orden superior y es, además, pedagógicamente más claro (el
+estudiante construye la tabla, que es el concepto). Si se implementa, especifíquese
+por separado; el resto de la biblioteca **no** depende de ello.
+
+---
+
+## 21. `imprime`, `afirma` y `traza`
+
+### 21.1 `imprime` [REQ] — resuelve la pregunta abierta §18.4
+
+`imprime(e₁, …, e_k)` evalúa sus argumentos, imprime sus representaciones
+**separadas por un espacio** y termina con **salto de línea**. `imprime()` (sin
+argumentos) imprime una línea en blanco. Formato por tipo:
+
+| Tipo | Representación |
+|---|---|
+| Entero / real | decimal (`120`, `8.3`) |
+| Bit | `0` / `1` |
+| Cadena | su contenido, **sin** comillas (`0011`) |
+| Lista | `[a, b, c]` (recursivo: `[[0, 1], [1, 0]]`) |
+| Conjunto | `{a, b, c}` en **orden canónico** (§20.2); vacío: `{}` |
+| Matriz | como lista de listas (una convención; opcionalmente una rejilla por renglones) |
+| Sin valor | `∅` — resultado de un procedimiento o de un `regresa` sin expresión. Es el comportamiento ya presente en las tres implementaciones. **Ojo:** mismo glifo que el literal de conjunto vacío en el código fuente (§20.1); el conjunto vacío **impreso** es `{}`, no `∅`. |
+
+Es E/S por efecto: como dice §12, el valor de una instrucción suelta se descarta,
+así que **solo** `imprime` produce salida.
+
+### 21.2 `afirma` [REQ] — autoverificación
+
+Instrucción nueva para que el estudiante compruebe su código contra los valores
+del libro. Palabra clave **`afirma`**.
+
+```ebnf
+instrucción ::= … | aserción ;
+aserción    ::= "afirma" expresión [ "," cadena ] ;
+```
+
+Semántica: evalúa la expresión (debe dar un bit). Si es `1`, no hace nada. Si es
+`0`, **aborta** el programa con un mensaje que incluye el **archivo y la línea**
+(§12 conserva el origen real incluso a través de `incluye`), el **texto fuente**
+de la expresión y la cadena opcional. Ejemplo:
+
+```
+afirma C(8, 4) = 70
+afirma mcd(504, 396) = 36, "Euclides"
+```
+
+Como `=` es igualdad estructural (§20.2), también sirve para listas y conjuntos:
+`afirma pascal(4) = [1, 4, 6, 4, 1]`.
+
+### 21.3 `traza` [OPC] — herramienta de comprensión
+
+Ejecuta una expresión (típicamente una llamada) con **rastreo** activado durante
+su extensión dinámica. Palabra clave **`traza`**.
+
+```ebnf
+instrucción ::= … | rastreo ;
+rastreo     ::= "traza" expresión ;
+```
+
+Semántica sugerida: mientras el rastreo está activo, cada **entrada** a una
+función imprime `→ f(args)`, cada **retorno** imprime `← valor`, y cada
+**asignación** ejecutada imprime `  lugar ← valor`, todo con sangría según la
+profundidad de la pila. Convierte a Nemi en herramienta de *entendimiento* (p.
+ej. ver iterar a Euclides), no solo de cálculo. Es de menor prioridad que §21.1–2.
+
+---
+
+## 22. Módulos de la biblioteca — código fuente y pruebas
+
+Todo el código siguiente es Nemi **puro** sobre el núcleo (§20–§21). Las líneas
+`afirma` son la **suite de aceptación** del módulo; sus valores esperados están
+verificados contra las notas del curso y contra el intérprete.
+
+### 22.1 `teoria_numeros.nemi`
+
+```
+# teoria_numeros.nemi — Unidad 2 (solo núcleo aritmético)
+
+función mcd(a, b)
+    si a < b
+        intercambia(a, b)
+    fin si
+    mientras b ≠ 0
+        r ← a mod b
+        a ← b
+        b ← r
+    fin mientras
+    regresa a
+fin función
+
+función mcm(a, b)
+    regresa ⌊(a · b) / mcd(a, b)⌋
+fin función
+
+función primo(n)
+    si n < 2
+        regresa 0
+    fin si
+    para d ← 2 hasta ⌊√n⌋
+        si n mod d = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función exp_mod(a, n, z)
+    resultado ← 1
+    x ← a mod z
+    mientras n > 0
+        si n mod 2 = 1
+            resultado ← (resultado · x) mod z
+        fin si
+        x ← (x · x) mod z
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función
+
+función euclides_extendido(a, b)      # regresa [d, s, t] con s·a + t·b = d
+    si b = 0
+        regresa [a, 1, 0]
+    fin si
+    r ← euclides_extendido(b, a mod b)
+    regresa [r[1], r[3], r[2] − ⌊a / b⌋ · r[3]]
+fin función
+
+función mod_inv(a, m)                  # inverso de a módulo m, o −1 si no existe
+    r ← euclides_extendido(a mod m, m)
+    si r[1] ≠ 1
+        regresa −1
+    fin si
+    regresa r[2] mod m
+fin función
+
+# --- pruebas ---
+afirma mcd(504, 396) = 36
+afirma mcm(4, 6) = 12
+afirma primo(97) = 1
+afirma primo(51) = 0
+afirma exp_mod(7, 13, 11) = 2
+afirma exp_mod(572, 29, 713) = 113
+afirma mod_inv(3, 7) = 5
+afirma euclides_extendido(240, 46)[1] = 2
+```
+
+### 22.2 `conteo.nemi`
+
+```
+# conteo.nemi — Unidad 3
+
+función factorial(n)
+    resultado ← 1
+    para i ← 2 hasta n
+        resultado ← resultado · i
+    fin para
+    regresa resultado
+fin función
+
+función P(n, r)
+    resultado ← 1
+    para i ← 0 hasta r − 1
+        resultado ← resultado · (n − i)
+    fin para
+    regresa resultado
+fin función
+
+función C(n, r)                        # forma iterativa: evita factoriales enormes
+    resultado ← 1
+    para i ← 1 hasta r
+        resultado ← ⌊(resultado · (n − r + i)) / i⌋
+    fin para
+    regresa resultado
+fin función
+
+función pascal(n)                      # regresa el renglón n: [C(n,0), …, C(n,n)]
+    fila ← [1]
+    para k ← 1 hasta n
+        agrega(fila, C(n, k))
+    fin para
+    regresa fila
+fin función
+
+función multinomial(n, ks)             # ks = [n1, …, nt] con suma n
+    resultado ← factorial(n)
+    para cada k en ks repite
+        resultado ← ⌊resultado / factorial(k)⌋
+    fin para
+    regresa resultado
+fin función
+
+función genera_combinaciones(n, r)     # lista de las C(n,r) combinaciones (orden lexicográfico)
+    s ← arreglo_cero(r)
+    para i ← 1 hasta r
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta C(n, r)
+        m ← r
+        tope ← n
+        mientras s[m] = tope
+            m ← m − 1
+            tope ← tope − 1
+        fin mientras
+        s[m] ← s[m] + 1
+        para j ← m + 1 hasta r
+            s[j] ← s[j − 1] + 1
+        fin para
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+función genera_permutaciones(n)        # lista de las n! permutaciones (orden lexicográfico)
+    s ← arreglo_cero(n)
+    para i ← 1 hasta n
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta factorial(n)
+        m ← n − 1
+        mientras s[m] > s[m + 1]
+            m ← m − 1
+        fin mientras
+        k ← n
+        mientras s[m] > s[k]
+            k ← k − 1
+        fin mientras
+        tmp ← s[m]
+        s[m] ← s[k]
+        s[k] ← tmp
+        p ← m + 1
+        q ← n
+        mientras p < q
+            tmp ← s[p]
+            s[p] ← s[q]
+            s[q] ← tmp
+            p ← p + 1
+            q ← q − 1
+        fin mientras
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma factorial(5) = 120
+afirma P(10, 4) = 5040
+afirma C(52, 5) = 2598960
+afirma C(8, 4) = 70
+afirma pascal(4) = [1, 4, 6, 4, 1]
+afirma multinomial(11, [1, 4, 4, 2]) = 34650
+afirma long(genera_combinaciones(6, 4)) = 15
+afirma long(genera_permutaciones(4)) = 24
+```
+
+### 22.3 `conjuntos.nemi`
+
+```
+# conjuntos.nemi — Unidad 1 (sobre las primitivas de Conjunto, §20.2)
+
+función complemento(A, U)
+    regresa diferencia(U, A)
+fin función
+
+función subconjunto_propio(A, B)
+    regresa subconjunto(A, B) ∧ ¬(A = B)
+fin función
+
+función potencia(A)                    # conjunto potencia P(A)
+    res ← { ∅ }                        # conjunto que contiene al conjunto vacío
+    para cada x en A repite
+        nuevos ← ∅                     # se acumula aparte para no mutar 'res' al iterar
+        para cada S en res repite
+            agrega(nuevos, union(S, {x}))
+        fin para
+        para cada T en nuevos repite
+            agrega(res, T)
+        fin para
+    fin para
+    regresa res
+fin función
+
+función producto_cartesiano(A, B)      # conjunto de pares [a, b]
+    res ← ∅
+    para cada a en A repite
+        para cada b en B repite
+            agrega(res, [a, b])
+        fin para
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma cardinalidad({3, 1, 2, 1}) = 3
+afirma (2 ∈ {1, 2, 3}) = 1
+afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma cardinalidad(potencia({1, 2, 3})) = 8
+afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6
+```
+
+### 22.4 `relaciones.nemi`
+
+```
+# relaciones.nemi — Unidad 1 (relación = matriz cero-uno n×n, base 1)
+
+función es_refleja(R, n)
+    para i ← 1 hasta n
+        si R[i][i] = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función es_simetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si R[i][j] ≠ R[j][i]
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_antisimetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si i ≠ j ∧ R[i][j] = 1 ∧ R[j][i] = 1
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_transitiva(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][j] = 1 ∧ R[j][k] = 1 ∧ R[i][k] = 0
+                    regresa 0
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función composicion(R, S, n)           # producto booleano de matrices: S∘R
+    T ← matriz_cero(n, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][k] = 1 ∧ S[k][j] = 1
+                    T[i][j] ← 1
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa T
+fin función
+
+función cerradura_transitiva(R, n)     # algoritmo de Warshall (véase §17.12)
+    W ← copia(R)
+    para k ← 1 hasta n
+        para i ← 1 hasta n
+            para j ← 1 hasta n
+                W[i][j] ← W[i][j] ∨ (W[i][k] ∧ W[k][j])
+            fin para
+        fin para
+    fin para
+    regresa W
+fin función
+
+# --- pruebas ---   (R = {(1,2),(2,3)} sobre {1,2,3})
+afirma es_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma es_refleja([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma cerradura_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3)[1][3] = 1
+```
+
+### 22.5 `booleana.nemi`
+
+```
+# booleana.nemi — Unidad 4
+# Una función booleana de n variables se representa como un arreglo t de 2^n
+# bits: t[k+1] es el valor sobre la entrada k (0 ≤ k < 2^n), donde k en binario
+# es (x1 x2 … xn) con x1 el bit más significativo (convención de mintérmino m_k).
+
+función nand(a, b)
+    regresa ¬(a ∧ b)
+fin función
+
+función nor(a, b)
+    regresa ¬(a ∨ b)
+fin función
+
+función xor(a, b)
+    regresa (a ∧ ¬b) ∨ (¬a ∧ b)
+fin función
+
+función xnor(a, b)
+    regresa ¬xor(a, b)
+fin función
+
+función filas(n)                       # 2^n
+    f ← 1
+    para i ← 1 hasta n
+        f ← f · 2
+    fin para
+    regresa f
+fin función
+
+función minterminos(t, n)              # lista de k con t[k+1] = 1
+    res ← []
+    para k ← 0 hasta filas(n) − 1
+        si t[k + 1] = 1
+            agrega(res, k)
+        fin si
+    fin para
+    regresa res
+fin función
+
+función equivalentes(t1, t2, n)        # ¿misma tabla de verdad?
+    para k ← 0 hasta filas(n) − 1
+        si t1[k + 1] ≠ t2[k + 1]
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función evalua(t, bits, n)             # valor de t sobre la entrada (bits[1..n])
+    k ← 0
+    para i ← 1 hasta n
+        k ← k · 2 + bits[i]
+    fin para
+    regresa t[k + 1]
+fin función
+
+# --- pruebas ---
+afirma xor(1, 1) = 0
+afirma nand(1, 1) = 0
+afirma nor(0, 0) = 1
+afirma minterminos([0, 1, 1, 0], 2) = [1, 2]           # XOR de 2 variables
+afirma equivalentes([0, 1, 1, 0], [0, 1, 1, 0], 2) = 1
+afirma minterminos([0,0,0,1,0,1,1,1], 3) = [3, 5, 6, 7] # mayoría: c = ∑m(3,5,6,7)
+afirma evalua([0,0,0,1,0,1,1,1], [1, 1, 0], 3) = 1
+```
+
+### 22.6 `cadenas.nemi`
+
+Requiere las primitivas de cadena: `long(s)`, indexación `s[i]` (base 1,
+devuelve un carácter = cadena de longitud 1), `concatena(s, t)`,
+`texto(x)` (número → cadena) y `valor(c)` (carácter dígito → entero).
+
+```
+# cadenas.nemi — Unidades 1–2
+
+función invierte(s)
+    r ← ""
+    para i ← 1 hasta long(s)
+        r ← concatena(r, s[long(s) − i + 1])
+    fin para
+    regresa r
+fin función
+
+función prefijo(s, k)                  # primeros k caracteres
+    r ← ""
+    para i ← 1 hasta k
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función sufijo(s, k)                   # últimos k caracteres
+    r ← ""
+    para i ← long(s) − k + 1 hasta long(s)
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función a_binario(n)                   # entero ≥ 0 → cadena binaria
+    si n = 0
+        regresa "0"
+    fin si
+    r ← ""
+    mientras n > 0
+        r ← concatena(texto(n mod 2), r)
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa r
+fin función
+
+función desde_base(s, b)               # cadena de dígitos en base b → entero
+    v ← 0
+    para i ← 1 hasta long(s)
+        v ← v · b + valor(s[i])
+    fin para
+    regresa v
+fin función
+
+# --- pruebas ---
+afirma invierte("abc") = "cba"
+afirma prefijo("discreta", 4) = "disc"
+afirma sufijo("discreta", 3) = "eta"
+afirma a_binario(13) = "1101"
+afirma desde_base("1101", 2) = 13
+```
+
+---
+
+## 23. Casos límite adicionales (biblioteca y extensiones)
+
+Complementan §16.
+
+- **`afirma` falso:** abortar con archivo, línea, texto de la expresión y mensaje.
+- **`agrega` sobre algo que no es lista ni conjunto:** error de tipo.
+- **`∈`, `union`, `⊆`, etc. con un operando que no es conjunto:** error de tipo.
+- **Igualdad entre tipos distintos** (p. ej. lista `=` conjunto): resultado `0`
+  (no error), salvo que se prefiera error; **fijar y documentar** la elección.
+- **Iterar (`para cada`) y mutar** la misma colección: comportamiento no definido;
+  la biblioteca lo evita acumulando en otra colección (véase `potencia`).
+- **`copia` superficial vs. profunda:** `copia` es **profunda**; sin ella, guardar
+  `s` en una lista y seguir mutando `s` corrompería lo guardado.
+- **Orden canónico** de conjuntos con elementos heterogéneos: debe ser total y
+  determinista (§20.2), aunque la elección concreta es libre.
+- **`mod_inv` sin inverso** (`mcd(a,m) ≠ 1`): devuelve `−1` (convención de la
+  biblioteca), no error.
 
 ---
 
@@ -540,5 +1282,21 @@ El artefacto de partida es esta especificación de **Nemi**. Tareas: (1) impleme
 el lexer y parser de la **sintaxis UTF-8** de la Parte II (gramática §10); (2) respetar las
 decisiones de §8 (asignación `←` vs. igualdad `=`, bloques con `fin`, base 1,
 bignum, paso por referencia de arreglos, `+`/`·` por tipo); (3) fijar el
-tratamiento de las **acciones en prosa** (§14); y (4) validar con el **corpus del
-§17**, cuyas salidas ya están verificadas en las notas.
+tratamiento de las **acciones en prosa** (§14); (4) validar con el **corpus del
+§17**, cuyas salidas ya están verificadas en las notas; y (5) implementar las
+**extensiones del núcleo** de §20–§21 (tipo `Conjunto`, listas dinámicas,
+`para cada`, igualdad estructural, `imprime`, `afirma`) y cargar la **biblioteca
+estándar** de §22, cuyas líneas `afirma` son su suite de aceptación.
+
+---
+
+## 24. Historial de versiones
+
+El documento se versiona con `mayor.menor`. Cambios incompatibles con
+implementaciones previas suben la versión **menor** hasta llegar a la 1.0 (primer
+intérprete que pase todo el corpus §17 **y** la biblioteca §22).
+
+| Versión | Alcance |
+|---|---|
+| **0.1** | Especificación inicial del núcleo: Parte I (guía de lectura) y Parte II §8–§18 (léxico, gramática EBNF, tipos, semántica, `incluye`, acciones en prosa, casos límite, corpus de prueba §17). Define la sintaxis concreta UTF-8, `←` vs `=`, bloques con `fin`, base 1, bignum, paso por referencia y polisemia `+`/`·`. |
+| **0.2** | *(esta versión)* Añade la **biblioteca estándar** y las extensiones que exige: §19 (arquitectura en dos capas y catálogo de módulos), §20 (literales de lista/conjunto, tipo `Conjunto`, `para cada`, listas dinámicas, igualdad estructural, retorno vía lista, funciones de primera clase [opcional]), §21 (`imprime` —resuelve §18.4—, `afirma`, `traza`), §22 (código fuente y pruebas de `teoria_numeros`, `conteo`, `conjuntos`, `relaciones`, `booleana`, `cadenas`) y §23 (casos límite de la biblioteca). No cambia nada de 0.1; solo agrega. **Aclaraciones (rev. tras revisión del implementador):** se resolvieron todas las preguntas abiertas de §18 (2/3/5 según el `README` del repo); §10 y §11 llevan ahora una nota que remite a las extensiones de §20 (antes §20 decía «se añaden a §10/§11» sin que esas secciones lo reflejaran); y se documentó el **doble uso del glifo `∅`** (literal de conjunto vacío en entrada vs. «sin valor» en la salida de `imprime`), decisión: aceptarlo y advertirlo (§20.1, fila nueva en §21.1). **Aclaración adicional (rev. tras implementación):** `∈` gana la palabra **`en`** como equivalente ASCII directo (`x en A`), reutilizando sin ambigüedad la palabra clave de `para cada … en …` (§20.3); ver §20.2. |

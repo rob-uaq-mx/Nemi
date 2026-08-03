@@ -1,0 +1,53 @@
+# cadenas.nemi — Unidades 1–2
+# Nemi.md §22.6
+
+función invierte(s)
+    r ← ""
+    para i ← 1 hasta long(s)
+        r ← concatena(r, s[long(s) − i + 1])
+    fin para
+    regresa r
+fin función
+
+función prefijo(s, k)                  # primeros k caracteres
+    r ← ""
+    para i ← 1 hasta k
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función sufijo(s, k)                   # últimos k caracteres
+    r ← ""
+    para i ← long(s) − k + 1 hasta long(s)
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función a_binario(n)                   # entero ≥ 0 → cadena binaria
+    si n = 0
+        regresa "0"
+    fin si
+    r ← ""
+    mientras n > 0
+        r ← concatena(texto(n mod 2), r)
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa r
+fin función
+
+función desde_base(s, b)               # cadena de dígitos en base b → entero
+    v ← 0
+    para i ← 1 hasta long(s)
+        v ← v · b + valor(s[i])
+    fin para
+    regresa v
+fin función
+
+# --- pruebas ---
+afirma invierte("abc") = "cba"
+afirma prefijo("discreta", 4) = "disc"
+afirma sufijo("discreta", 3) = "eta"
+afirma a_binario(13) = "1101"
+afirma desde_base("1101", 2) = 13

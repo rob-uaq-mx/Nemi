@@ -31,6 +31,9 @@ public:
         items_[checked(index)] = std::move(value);
     }
 
+    // Grow by one element at the end (§20.4 v0.2 `agrega` on a lista).
+    void append(Value value) { items_.push_back(std::move(value)); }
+
     const std::vector<Value>& items() const { return items_; }
 
 private:
@@ -40,8 +43,8 @@ private:
     std::size_t checked(Integer index) const {
         Integer size(static_cast<long long>(items_.size()));
         if (index < Integer(1) || index > size) {
-            throw ExecutionError("index " + index.to_decimal() +
-                                 " out of range 1.." +
+            throw ExecutionError("índice " + index.to_decimal() +
+                                 " fuera de rango 1.." +
                                  std::to_string(items_.size()));
         }
         return static_cast<std::size_t>((index - Integer(1)).to_llong());

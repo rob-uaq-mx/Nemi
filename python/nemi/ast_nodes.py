@@ -75,6 +75,18 @@ class ForLoop(Statement):
 
 
 @dataclass
+class ForEach(Statement):
+    """``para cada var en coleccion [repite] … fin para`` (spec §20.3, v0.2).
+
+    Iterates a Conjunto in canonical order, or an Array in index order.
+    """
+    var: str
+    collection: "Expr"
+    body: List[Statement]
+    location: object = None
+
+
+@dataclass
 class WhileLoop(Statement):
     """``mientras cond … fin mientras``."""
     condition: "Expr"
@@ -112,6 +124,26 @@ class Prose(Statement):
     location: object = None
 
 
+@dataclass
+class Assert(Statement):
+    """``afirma expr [, "mensaje"]`` (spec §21.2, v0.2): self-check the
+    student can run against known values. ``message`` is the optional
+    literal string's value, or ``None`` if omitted (the grammar takes a
+    ``cadena`` here, not a general expression)."""
+    condition: "Expr"
+    message: Optional[str]
+    location: object = None
+
+
+@dataclass
+class Trace(Statement):
+    """``traza expr`` (spec §21.3, v0.2 [OPC]): runs ``expression`` (typically
+    a call) with entry/return/assignment tracing active for its dynamic
+    extent."""
+    expression: "Expr"
+    location: object = None
+
+
 # --------------------------------------------------------------------------
 # Expressions
 # --------------------------------------------------------------------------
@@ -140,6 +172,15 @@ class StringLiteral(Expr):
 @dataclass
 class ArrayLiteral(Expr):
     """``[e1, e2, …]`` — an extension beyond §10 so hosts/tests can build inputs."""
+    elements: List[Expr]
+    location: object = None
+
+
+@dataclass
+class SetLiteral(Expr):
+    """``{e1, e2, …}`` or ``∅`` (spec §20.1, v0.2). Duplicates collapse at
+    evaluation time (the ``Conjunto`` constructor is idempotent), not here --
+    ``elements`` is empty only for ``{}``/``∅`` written literally."""
     elements: List[Expr]
     location: object = None
 

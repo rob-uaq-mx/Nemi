@@ -60,10 +60,13 @@ private:
     Block parse_block();
     StmtPtr parse_statement();
     StmtPtr parse_for();
+    StmtPtr parse_for_each();   // para cada var en coleccion ... (spec §20.3, v0.2)
     StmtPtr parse_while();
     StmtPtr parse_if();
     StmtPtr parse_return();
     StmtPtr parse_assign_or_call();   // ident (call) or ident{[idx]} '←' expr
+    StmtPtr parse_assert();   // afirma expr [, "mensaje"] (spec §21.2, v0.2)
+    StmtPtr parse_trace();    // traza expr (spec §21.3, v0.2 [OPC])
 
     // -- expressions (precedence tower, low to high) ------------------------
     ExprPtr parse_logic_or();
@@ -76,6 +79,7 @@ private:
     ExprPtr parse_postfix();
     ExprPtr parse_primary();
     ExprPtr parse_array_literal();
+    ExprPtr parse_set_literal();   // {e1, e2, ...} or ∅ (spec §20.1, v0.2)
     ExprPtr finish_call(const std::string& name, SourceLocation location);
 };
 

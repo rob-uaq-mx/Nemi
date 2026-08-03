@@ -9,6 +9,7 @@
 #define NEMI_AST_HPP
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -29,6 +30,7 @@ struct IntLiteral;
 struct RealLiteral;
 struct StringLiteral;
 struct ArrayLiteral;
+struct SetLiteral;
 struct Variable;
 struct Index;
 struct Call;
@@ -37,11 +39,14 @@ struct Binary;
 
 struct Assign;
 struct ForLoop;
+struct ForEach;
 struct WhileLoop;
 struct If;
 struct Return;
 struct ExprStatement;
 struct Prose;
+struct Assert;
+struct Trace;
 
 // ---- visitor interfaces ---------------------------------------------------
 struct ExprVisitor {
@@ -50,6 +55,7 @@ struct ExprVisitor {
     virtual void visit(RealLiteral&) = 0;
     virtual void visit(StringLiteral&) = 0;
     virtual void visit(ArrayLiteral&) = 0;
+    virtual void visit(SetLiteral&) = 0;
     virtual void visit(Variable&) = 0;
     virtual void visit(Index&) = 0;
     virtual void visit(Call&) = 0;
@@ -61,11 +67,14 @@ struct StmtVisitor {
     virtual ~StmtVisitor() = default;
     virtual void visit(Assign&) = 0;
     virtual void visit(ForLoop&) = 0;
+    virtual void visit(ForEach&) = 0;
     virtual void visit(WhileLoop&) = 0;
     virtual void visit(If&) = 0;
     virtual void visit(Return&) = 0;
     virtual void visit(ExprStatement&) = 0;
     virtual void visit(Prose&) = 0;
+    virtual void visit(Assert&) = 0;
+    virtual void visit(Trace&) = 0;
 };
 
 // ---- bases ----------------------------------------------------------------
@@ -107,6 +116,11 @@ struct StringLiteral : Expr {
 };
 
 struct ArrayLiteral : Expr {
+    std::vector<ExprPtr> elements;
+    NEMI_EXPR_ACCEPT
+};
+
+struct SetLiteral : Expr {    // {e1, e2, ...} or ∅ (spec §20.1, v0.2)
     std::vector<ExprPtr> elements;
     NEMI_EXPR_ACCEPT
 };
@@ -158,6 +172,13 @@ struct ForLoop : Stmt {       // para var ← start hasta end ... (inclusive, +1
     NEMI_STMT_ACCEPT
 };
 
+struct ForEach : Stmt {       // para cada var en coleccion ... (spec §20.3, v0.2)
+    std::string var;
+    ExprPtr collection;
+    Block body;
+    NEMI_STMT_ACCEPT
+};
+
 struct WhileLoop : Stmt {
     ExprPtr condition;
     Block body;
@@ -184,6 +205,20 @@ struct ExprStatement : Stmt { // a call used for effect, e.g. intercambia(a,b)
 
 struct Prose : Stmt {         // « ... » non-executable (spec §14)
     std::string text;
+    NEMI_STMT_ACCEPT
+};
+
+struct Assert : Stmt {        // afirma expr [, "mensaje"] (spec §21.2, v0.2)
+    ExprPtr condition;
+    std::optional<std::string> message;  // the literal string's value, or
+                                          // nullopt if omitted (the grammar
+                                          // takes a cadena here, not a
+                                          // general expression)
+    NEMI_STMT_ACCEPT
+};
+
+struct Trace : Stmt {         // traza expr (spec §21.3, v0.2 [OPC])
+    ExprPtr expression;
     NEMI_STMT_ACCEPT
 };
 

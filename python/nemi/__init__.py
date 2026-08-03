@@ -36,27 +36,32 @@ __all__ = [
 __version__ = "0.1.0"
 
 
-def load(source, source_path=""):
+def load(source, source_path="", include_paths=()):
     """Parse Nemi source text and return a ready-to-use :class:`Interpreter`.
 
     ``source_path``, if given, tags error locations with a file name and is
     the base for resolving any relative ``incluye "ruta"`` directive in
-    ``source`` (otherwise: the current working directory).
+    ``source`` (otherwise: the current working directory). ``include_paths``
+    lists extra directories (the ``-I`` CLI flag) tried, in order, if an
+    ``incluye`` target isn't found next to its own file.
     """
-    return Interpreter(parse(tokenize_with_includes(source, source_path)))
+    return Interpreter(
+        parse(tokenize_with_includes(source, source_path, include_paths))
+    )
 
 
-def load_files(paths):
+def load_files(paths, include_paths=()):
     """Parse and merge several source files into one :class:`Interpreter`.
 
     Each file's ``incluye "ruta"`` directives resolve relative to its own
-    directory.
+    directory, falling back to ``include_paths`` (the ``-I`` CLI flag) in
+    order if not found there.
     """
     from .ast_nodes import Program
 
     merged = Program()
     for path in paths:
-        program = parse(tokenize_file_with_includes(path))
+        program = parse(tokenize_file_with_includes(path, include_paths))
         merged.definitions.extend(program.definitions)
         merged.main.extend(program.main)  # top-level statements run in file order
     return Interpreter(merged)

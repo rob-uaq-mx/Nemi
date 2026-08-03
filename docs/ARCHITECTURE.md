@@ -1,10 +1,20 @@
 # Nemi interpreter — architecture & C++ portability guide
 
+> **Scope note:** this document covers the **v0.1 core** (`Nemi.md` §1–§18) —
+> lexer, parser, AST, evaluator, the value model. The **v0.2 common library**
+> (`Conjunto`, `para cada`, dynamic lists, `afirma`/`traza`, string
+> primitives, and the 6 real modules in [`../bibcom`](../bibcom)) was added
+> on top afterwards; see [`../backlog_v0.2.md`](../backlog_v0.2.md) (Fase
+> 0–8) for its own design decisions, in the same spirit as §8 below — those
+> weren't folded into this file to avoid re-deriving a second time what the
+> phase-by-phase backlog already records in more detail.
+
 This document describes how the Python reference interpreter is structured and
-how each piece maps onto the C++ port (`cpp/`, complete for the core language —
-see `cpp/backlog.md` for status). The implementation is deliberately a
-**classic three-stage tree-walking interpreter** with no clever Python-only
-tricks, so the translation is mechanical.
+how each piece maps onto the C++ ports (`cpp/`, `Windows/` — complete for the
+core language, see `cpp/backlog.md`/`Windows/backlog.md` for status). The
+implementation is deliberately a **classic three-stage tree-walking
+interpreter** with no clever Python-only tricks, so the translation is
+mechanical.
 
 ```
 source text ──▶ Lexer ──▶ [Token] ──▶ Parser ──▶ AST ──▶ Interpreter ──▶ Value
@@ -18,14 +28,17 @@ section references below (§9, §10, …) point into it.
 
 ## Repository layout
 
-The Python reference and the C++ port are siblings that share the spec
-(`Nemi.md`), the acceptance corpus (`examples/`), and this document:
+The Python reference and the two C++ ports are siblings that share the spec
+(`Nemi.md`), the acceptance corpus (`examples/`), the common library
+(`bibcom/`), and this document:
 
 ```
 python/nemi/   the reference interpreter (the module map below)
-python/tests/  the §17 acceptance runner
+python/tests/  the acceptance runner (run_corpus.py)
 cpp/           the C++ port (see cpp/README.md)
-examples/      the shared corpus (both suites run it)
+Windows/       the C++ port + WinNemi.exe editor/console (see Windows/README.md)
+examples/      the shared §17 corpus (all three suites run it)
+bibcom/        the shared v0.2 common library, §22 (all three suites run it)
 ```
 
 ## 1. Module map (Python reference)
@@ -216,9 +229,11 @@ A port could instead dispatch prose text to host primitives; the seam is the
 
 `python/tests/run_corpus.py` is a dependency-free runner asserting every §17 expected
 output (all pre-verified in the course notes), plus bignum and ASCII-operator
-checks, and that `enlosa` is defined but not executable past its base case.
-Keep this file as the **conformance suite** for any reimplementation: a C++ port
-is correct when it reproduces the same 21 results.
+checks, and that `enlosa` is defined but not executable past its base case
+(87/87 checks as of the v0.2 common-library additions — see the scope note at
+the top of this file). Keep this file as the **conformance suite** for any
+reimplementation: a C++ port is correct when it reproduces the same results
+(`{cpp,Windows}/tests/corpus_test.cpp`, 82/82 each).
 
 ---
 

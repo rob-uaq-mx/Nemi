@@ -19,6 +19,8 @@ add_library(nemi
   src/bigint.cpp
   src/rational.cpp
   src/value.cpp
+  src/conjunto.cpp
+  src/pretty.cpp
   src/lexer.cpp
   src/parser.cpp
   src/interpreter.cpp

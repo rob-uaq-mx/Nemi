@@ -1,0 +1,77 @@
+# relaciones.nemi — Unidad 1 (relación = matriz cero-uno n×n, base 1)
+# Nemi.md §22.4
+
+función es_refleja(R, n)
+    para i ← 1 hasta n
+        si R[i][i] = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función es_simetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si R[i][j] ≠ R[j][i]
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_antisimetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si i ≠ j ∧ R[i][j] = 1 ∧ R[j][i] = 1
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_transitiva(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][j] = 1 ∧ R[j][k] = 1 ∧ R[i][k] = 0
+                    regresa 0
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función composicion(R, S, n)           # producto booleano de matrices: S∘R
+    T ← matriz_cero(n, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][k] = 1 ∧ S[k][j] = 1
+                    T[i][j] ← 1
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa T
+fin función
+
+función cerradura_transitiva(R, n)     # algoritmo de Warshall (véase §17.12)
+    W ← copia(R)
+    para k ← 1 hasta n
+        para i ← 1 hasta n
+            para j ← 1 hasta n
+                W[i][j] ← W[i][j] ∨ (W[i][k] ∧ W[k][j])
+            fin para
+        fin para
+    fin para
+    regresa W
+fin función
+
+# --- pruebas ---   (R = {(1,2),(2,3)} sobre {1,2,3})
+afirma es_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma es_refleja([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma cerradura_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3)[1][3] = 1

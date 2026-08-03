@@ -23,15 +23,19 @@ namespace nemi {
 // recursively. Relative `incluye` paths resolve against the directory of
 // `base_path`; if `base_path` is empty (an in-memory source with no file of
 // its own, e.g. a `--llama` expression), they resolve against the current
-// working directory. Throws LexicalError for a missing string operand after
-// `incluye`, a file that can't be opened, or a cyclic inclusion.
-std::vector<Token> tokenize_with_includes(const std::string& source,
-                                           const std::string& base_path = "");
+// working directory. If not found there, each directory in `search_paths`
+// (the `-I` CLI flag) is tried in order. Throws LexicalError for a missing
+// string operand after `incluye`, a file that can't be opened, or a cyclic
+// inclusion.
+std::vector<Token> tokenize_with_includes(
+    const std::string& source, const std::string& base_path = "",
+    const std::vector<std::string>& search_paths = {});
 
 // Reads `path` from disk (UTF-8 bytes, no BOM handling -- matches every
 // .nemi file in examples/) and tokenizes it with tokenize_with_includes.
 // Throws LexicalError if `path` can't be opened.
-std::vector<Token> tokenize_file_with_includes(const std::string& path);
+std::vector<Token> tokenize_file_with_includes(
+    const std::string& path, const std::vector<std::string>& search_paths = {});
 
 }  // namespace nemi
 

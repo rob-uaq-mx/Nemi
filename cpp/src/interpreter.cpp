@@ -18,7 +18,9 @@
 #include <utility>
 
 #include "nemi/array.hpp"
+#include "nemi/conjunto.hpp"
 #include "nemi/errors.hpp"
+#include "nemi/pretty.hpp"
 
 namespace nemi {
 namespace {
@@ -43,7 +45,7 @@ bool is_number(const Value& v) {
 
 const Value& require_number(const Value& v) {
     if (!is_number(v)) {
-        throw ExecutionError("expected a number, got " + format_value(v));
+        throw ExecutionError("se esperaba un número, se obtuvo " + format_value(v));
     }
     return v;
 }
@@ -92,17 +94,17 @@ Value arith_combine(TokenKind op, const Value& left, const Value& right) {
 
 Value require_arith(const Value& left, const Value& right, const char* symbol, TokenKind op) {
     if (!is_number(left) || !is_number(right)) {
-        throw ExecutionError(std::string("operator '") + symbol + "' needs numbers, got " +
-                             format_value(left) + " and " + format_value(right));
+        throw ExecutionError(std::string("el operador '") + symbol + "' requiere números, se obtuvo " +
+                             format_value(left) + " y " + format_value(right));
     }
     return arith_combine(op, left, right);
 }
 
 Value divide_values(const Value& left, const Value& right) {
     if (!is_number(left) || !is_number(right)) {
-        throw ExecutionError("operator '/' needs numbers");
+        throw ExecutionError("el operador '/' requiere números");
     }
-    if (is_value_zero(right)) throw ExecutionError("division by zero");
+    if (is_value_zero(right)) throw ExecutionError("división entre cero");
     if (std::holds_alternative<Real>(left) || std::holds_alternative<Real>(right)) {
         return as_real(left) / as_real(right);
     }
@@ -117,50 +119,46 @@ Value modulo_values(const Value& left, const Value& right) {
     // its own Value alternative (not an Integer), holds_alternative<Integer>
     // already excludes booleans with no extra check needed.
     if (!std::holds_alternative<Integer>(left) || !std::holds_alternative<Integer>(right)) {
-        throw ExecutionError("operator 'mod' needs integers");
+        throw ExecutionError("el operador 'mod' requiere enteros");
     }
     const Integer& a = std::get<Integer>(left);
     const Integer& b = std::get<Integer>(right);
-    if (b.is_zero()) throw ExecutionError("modulo by zero");
+    if (b.is_zero()) throw ExecutionError("módulo entre cero");
     return a.mod_floor(b);  // floor-mod, matching Python's `%`
 }
 
-// Cross-type equality (int/Rational/Real compare numerically; mismatched
-// non-numeric types are simply not equal, mirroring Python's `==`).
-bool values_equal(const Value& a, const Value& b) {
-    if (is_number(a) && is_number(b)) {
-        if (std::holds_alternative<Real>(a) || std::holds_alternative<Real>(b)) {
-            return as_real(a) == as_real(b);
-        }
-        if (std::holds_alternative<Rational>(a) || std::holds_alternative<Rational>(b)) {
-            return as_rational(a) == as_rational(b);
-        }
-        return std::get<Integer>(a) == std::get<Integer>(b);
-    }
-    if (std::holds_alternative<bool>(a) && std::holds_alternative<bool>(b)) {
-        return std::get<bool>(a) == std::get<bool>(b);
-    }
-    if (std::holds_alternative<std::string>(a) && std::holds_alternative<std::string>(b)) {
-        return std::get<std::string>(a) == std::get<std::string>(b);
-    }
-    if (std::holds_alternative<ArrayPtr>(a) && std::holds_alternative<ArrayPtr>(b)) {
-        const auto& ia = std::get<ArrayPtr>(a)->items();
-        const auto& ib = std::get<ArrayPtr>(b)->items();
-        if (ia.size() != ib.size()) return false;
-        for (std::size_t k = 0; k < ia.size(); ++k) {
-            if (!values_equal(ia[k], ib[k])) return false;
-        }
-        return true;
-    }
-    if (std::holds_alternative<std::monostate>(a) && std::holds_alternative<std::monostate>(b)) {
-        return true;
-    }
-    return false;  // mismatched types: not equal
-}
+// values_equal (structural equality, incl. Array/Conjunto) lives in
+// value.cpp now -- shared with Conjunto's own idempotent insertion
+// (conjunto.cpp), so both agree on what "the same element" means.
 
 Value compare_values(TokenKind op, const Value& left, const Value& right) {
     if (op == TokenKind::Eq) return values_equal(left, right);
     if (op == TokenKind::Ne) return !values_equal(left, right);
+
+    // Set operators (spec §20.2, v0.2): ∈/∉ take any left operand and a
+    // Conjunto on the right; ⊆/⊂ need a Conjunto on both sides. Within
+    // ("en") is a word-only synonym for In (∈, no ASCII glyph otherwise),
+    // reused from "para cada ... en ..." loop syntax -- see is_comparison.
+    if (op == TokenKind::In || op == TokenKind::Within || op == TokenKind::NotIn) {
+        auto* set = std::get_if<SetPtr>(&right);
+        if (!set) {
+            throw ExecutionError(
+                std::string("'") + (op == TokenKind::NotIn ? "\xE2\x88\x89" : "\xE2\x88\x88") +
+                "' requiere un conjunto a la derecha, se obtuvo " + format_value(right));
+        }
+        bool member = (*set)->contains(left);
+        return op != TokenKind::NotIn ? member : !member;
+    }
+    if (op == TokenKind::SubsetEq || op == TokenKind::Subset) {
+        auto* a = std::get_if<SetPtr>(&left);
+        auto* b = std::get_if<SetPtr>(&right);
+        if (!a || !b) {
+            throw ExecutionError(
+                std::string("'") + (op == TokenKind::SubsetEq ? "\xE2\x8A\x86" : "\xE2\x8A\x82") +
+                "' requiere dos conjuntos, se obtuvo " + format_value(left) + " y " + format_value(right));
+        }
+        return op == TokenKind::SubsetEq ? (*a)->is_subset(**b) : (*a)->is_proper_subset(**b);
+    }
 
     if (is_number(left) && is_number(right)) {
         if (std::holds_alternative<Real>(left) || std::holds_alternative<Real>(right)) {
@@ -184,12 +182,14 @@ Value compare_values(TokenKind op, const Value& left, const Value& right) {
         if (op == TokenKind::Gt) return a > b;
         if (op == TokenKind::Ge) return a >= b;
     }
-    throw ExecutionError("cannot order " + format_value(left) + " and " + format_value(right));
+    throw ExecutionError("no se pueden ordenar " + format_value(left) + " y " + format_value(right));
 }
 
 bool is_comparison(TokenKind k) {
     return k == TokenKind::Eq || k == TokenKind::Ne || k == TokenKind::Lt ||
-           k == TokenKind::Le || k == TokenKind::Gt || k == TokenKind::Ge;
+           k == TokenKind::Le || k == TokenKind::Gt || k == TokenKind::Ge ||
+           k == TokenKind::In || k == TokenKind::Within || k == TokenKind::NotIn ||
+           k == TokenKind::SubsetEq || k == TokenKind::Subset;
 }
 
 // Return a 0/1 bit if any operand is an Integer, else a plain bool. Keeps
@@ -210,23 +210,23 @@ Value negate_value(const Value& v) {
     if (auto i = std::get_if<Integer>(&v)) return -(*i);
     if (auto r = std::get_if<Rational>(&v)) return -(*r);
     if (auto d = std::get_if<Real>(&v)) return -(*d);
-    throw ExecutionError("cannot negate " + format_value(v));
+    throw ExecutionError("no se puede negar " + format_value(v));
 }
 
 Value sqrt_value(const Value& v) {
     require_number(v);
     if (auto i = std::get_if<Integer>(&v)) {
-        if (i->is_negative()) throw ExecutionError("√ of a negative number");
+        if (i->is_negative()) throw ExecutionError("√ de un número negativo");
         Integer root = Integer::isqrt(*i);
         if (root * root == *i) return root;   // perfect square: exact
         return std::sqrt(i->to_double());
     }
     if (auto r = std::get_if<Rational>(&v)) {
-        if (r->num.is_negative()) throw ExecutionError("√ of a negative number");
+        if (r->num.is_negative()) throw ExecutionError("√ de un número negativo");
         return std::sqrt(r->to_double());
     }
     double d = std::get<Real>(v);
-    if (d < 0) throw ExecutionError("√ of a negative number");
+    if (d < 0) throw ExecutionError("√ de un número negativo");
     return std::sqrt(d);
 }
 
@@ -257,38 +257,38 @@ Value ceil_value(const Value& v) {
 Value index_get(const Value& container, const Value& key) {
     if (auto a = std::get_if<ArrayPtr>(&container)) {
         if (!std::holds_alternative<Integer>(key)) {
-            throw ExecutionError("array index must be an integer, got " + format_value(key));
+            throw ExecutionError("el índice de arreglo debe ser un entero, se obtuvo " + format_value(key));
         }
         return (*a)->get(std::get<Integer>(key));
     }
     if (auto s = std::get_if<std::string>(&container)) {
         if (!std::holds_alternative<Integer>(key)) {
-            throw ExecutionError("string index must be an integer, got " + format_value(key));
+            throw ExecutionError("el índice de cadena debe ser un entero, se obtuvo " + format_value(key));
         }
         Integer idx = std::get<Integer>(key);
         Integer size(static_cast<long long>(s->size()));
         if (idx < Integer(1) || idx > size) {
-            throw ExecutionError("index " + idx.to_decimal() + " out of range 1.." +
+            throw ExecutionError("índice " + idx.to_decimal() + " fuera de rango 1.." +
                                  std::to_string(s->size()));
         }
         std::size_t pos = static_cast<std::size_t>((idx - Integer(1)).to_llong());
         return std::string(1, (*s)[pos]);
     }
-    throw ExecutionError("value is not indexable: " + format_value(container));
+    throw ExecutionError("el valor no es indexable: " + format_value(container));
 }
 
 void index_set(const Value& container, const Value& key, Value value) {
     if (auto a = std::get_if<ArrayPtr>(&container)) {
         if (!std::holds_alternative<Integer>(key)) {
-            throw ExecutionError("array index must be an integer, got " + format_value(key));
+            throw ExecutionError("el índice de arreglo debe ser un entero, se obtuvo " + format_value(key));
         }
         (*a)->set(std::get<Integer>(key), std::move(value));
         return;
     }
     if (std::holds_alternative<std::string>(container)) {
-        throw ExecutionError("strings are immutable; cannot assign to s[i]");
+        throw ExecutionError("las cadenas son inmutables; no se puede asignar a s[i]");
     }
-    throw ExecutionError("value is not indexable: " + format_value(container));
+    throw ExecutionError("el valor no es indexable: " + format_value(container));
 }
 
 // ---------------------------------------------------------------------
@@ -297,8 +297,8 @@ void index_set(const Value& container, const Value& key, Value value) {
 // ---------------------------------------------------------------------
 void check_arity(const char* name, const std::vector<Value>& args, std::size_t n) {
     if (args.size() != n) {
-        throw ExecutionError(std::string(name) + " expects " + std::to_string(n) +
-                             " argument(s), got " + std::to_string(args.size()));
+        throw ExecutionError(std::string(name) + " espera " + std::to_string(n) +
+                             " argumento(s), se obtuvo " + std::to_string(args.size()));
     }
 }
 
@@ -334,8 +334,142 @@ Value prim_length(const std::vector<Value>& args) {
     if (auto s = std::get_if<std::string>(&args[0])) {
         return Integer(static_cast<long long>(s->size()));
     }
-    throw ExecutionError("long expects an array or string");
+    if (auto c = std::get_if<SetPtr>(&args[0])) {
+        return Integer(static_cast<long long>((*c)->cardinality()));
+    }
+    throw ExecutionError("long espera un arreglo, cadena o conjunto");
 }
+
+// -- String primitives (spec §22.6, v0.2) ----------------------------------
+// long(s) and indexing s[i] (base 1, a length-1 string) already exist
+// above/in index_get; these three round out what cadenas.nemi needs.
+Value prim_concatena(const std::vector<Value>& args) {
+    check_arity("concatena", args, 2);
+    auto s = std::get_if<std::string>(&args[0]);
+    auto t = std::get_if<std::string>(&args[1]);
+    if (!s || !t) {
+        throw ExecutionError("concatena espera dos cadenas, se obtuvo " +
+                             format_value(args[0]) + ", " + format_value(args[1]));
+    }
+    return *s + *t;
+}
+
+Value prim_texto(const std::vector<Value>& args) {
+    check_arity("texto", args, 1);
+    if (!is_number(args[0])) {
+        throw ExecutionError("texto espera un número, se obtuvo " + format_value(args[0]));
+    }
+    return format_value(args[0]);  // same rendering imprime/afirma already use
+}
+
+Value prim_valor(const std::vector<Value>& args) {
+    check_arity("valor", args, 1);
+    auto s = std::get_if<std::string>(&args[0]);
+    if (!s || s->size() != 1 || (*s)[0] < '0' || (*s)[0] > '9') {
+        throw ExecutionError("valor espera un carácter de un solo dígito, se obtuvo " +
+                             format_value(args[0]));
+    }
+    return Integer(static_cast<long long>((*s)[0] - '0'));
+}
+
+// -- Conjunto primitives (spec §20.2, v0.2) --------------------------------
+const SetPtr& require_set(const char* name, const Value& v) {
+    auto s = std::get_if<SetPtr>(&v);
+    if (!s) throw ExecutionError(std::string(name) + " espera un conjunto, se obtuvo " + format_value(v));
+    return *s;
+}
+
+Value prim_pertenece(const std::vector<Value>& args) {
+    check_arity("pertenece", args, 2);
+    return require_set("pertenece", args[1])->contains(args[0]);
+}
+Value prim_subconjunto(const std::vector<Value>& args) {
+    check_arity("subconjunto", args, 2);
+    return require_set("subconjunto", args[0])->is_subset(*require_set("subconjunto", args[1]));
+}
+Value prim_union(const std::vector<Value>& args) {
+    check_arity("union", args, 2);
+    return std::make_shared<Conjunto>(
+        require_set("union", args[0])->set_union(*require_set("union", args[1])));
+}
+Value prim_interseccion(const std::vector<Value>& args) {
+    check_arity("interseccion", args, 2);
+    return std::make_shared<Conjunto>(
+        require_set("interseccion", args[0])->intersection(*require_set("interseccion", args[1])));
+}
+Value prim_diferencia(const std::vector<Value>& args) {
+    check_arity("diferencia", args, 2);
+    return std::make_shared<Conjunto>(
+        require_set("diferencia", args[0])->difference(*require_set("diferencia", args[1])));
+}
+Value prim_cardinalidad(const std::vector<Value>& args) {
+    check_arity("cardinalidad", args, 1);
+    return Integer(static_cast<long long>(require_set("cardinalidad", args[0])->cardinality()));
+}
+
+// -- Dynamic lists (spec §20.4, v0.2) --------------------------------------
+Value prim_agrega(const std::vector<Value>& args) {
+    check_arity("agrega", args, 2);
+    const Value& a = args[0];
+    if (auto arr = std::get_if<ArrayPtr>(&a)) {
+        (*arr)->append(args[1]);  // grows the list, mutating by reference
+        return Value();
+    }
+    if (auto set = std::get_if<SetPtr>(&a)) {
+        (*set)->add(args[1]);  // idempotent insert (§20.2)
+        return Value();
+    }
+    throw ExecutionError("agrega espera un arreglo o conjunto, se obtuvo " + format_value(a));
+}
+
+Value deep_copy(const Value& v) {
+    if (auto a = std::get_if<ArrayPtr>(&v)) {
+        std::vector<Value> items;
+        items.reserve((*a)->items().size());
+        for (const auto& item : (*a)->items()) items.push_back(deep_copy(item));
+        return std::make_shared<Array>(std::move(items));
+    }
+    if (auto s = std::get_if<SetPtr>(&v)) {
+        std::vector<Value> items;
+        items.reserve((*s)->items().size());
+        for (const auto& item : (*s)->items()) items.push_back(deep_copy(item));
+        return std::make_shared<Conjunto>(std::move(items));
+    }
+    return v;  // scalars are already value types -- copying Value copies them
+}
+Value prim_copia(const std::vector<Value>& args) {
+    check_arity("copia", args, 1);
+    return deep_copy(args[0]);
+}
+
+long long require_nonneg_int(const char* name, const Value& v) {
+    auto i = std::get_if<Integer>(&v);
+    if (!i || i->is_negative()) {
+        throw ExecutionError(std::string(name) + " espera un entero no negativo, se obtuvo " +
+                             format_value(v));
+    }
+    return i->to_llong();
+}
+
+Value prim_arreglo_cero(const std::vector<Value>& args) {
+    check_arity("arreglo_cero", args, 1);
+    long long n = require_nonneg_int("arreglo_cero", args[0]);
+    return std::make_shared<Array>(std::vector<Value>(static_cast<std::size_t>(n), Value(Integer(0))));
+}
+
+Value prim_matriz_cero(const std::vector<Value>& args) {
+    check_arity("matriz_cero", args, 2);
+    long long m = require_nonneg_int("matriz_cero", args[0]);
+    long long n = require_nonneg_int("matriz_cero", args[1]);
+    std::vector<Value> rows;
+    rows.reserve(static_cast<std::size_t>(m));
+    for (long long i = 0; i < m; ++i) {
+        rows.push_back(std::make_shared<Array>(
+            std::vector<Value>(static_cast<std::size_t>(n), Value(Integer(0)))));
+    }
+    return std::make_shared<Array>(std::move(rows));
+}
+
 Value prim_print(const std::vector<Value>& args) {
     std::string line;
     for (std::size_t k = 0; k < args.size(); ++k) {
@@ -358,7 +492,20 @@ const std::unordered_map<std::string, PrimitiveFn>& primitives() {
         {"abs", prim_abs},
         {"mod", prim_mod},
         {"long", prim_length},
+        {"concatena", prim_concatena},
+        {"texto", prim_texto},
+        {"valor", prim_valor},
         {"imprime", prim_print},
+        {"pertenece", prim_pertenece},
+        {"subconjunto", prim_subconjunto},
+        {"union", prim_union},
+        {"interseccion", prim_interseccion},
+        {"diferencia", prim_diferencia},
+        {"cardinalidad", prim_cardinalidad},
+        {"agrega", prim_agrega},
+        {"copia", prim_copia},
+        {"arreglo_cero", prim_arreglo_cero},
+        {"matriz_cero", prim_matriz_cero},
     };
     return table;
 }
@@ -373,7 +520,7 @@ Interpreter::Interpreter(Program program) : program_(std::move(program)) {
         auto [it, inserted] = functions_.emplace(def->name, def.get());
         (void)it;
         if (!inserted) {
-            throw ExecutionError("duplicate definition: " + def->name);
+            throw ExecutionError("definición duplicada: " + def->name);
         }
     }
 }
@@ -400,7 +547,7 @@ void Interpreter::run_program() {
 Value Interpreter::call(const std::string& name, std::vector<Value> args) {
     auto it = functions_.find(name);
     if (it == functions_.end()) {
-        throw ExecutionError("undefined function or procedure: " + name);
+        throw ExecutionError("función o procedimiento no definido: " + name);
     }
     return invoke(*it->second, args);
 }
@@ -422,15 +569,30 @@ Value Interpreter::evaluate(Expr& expr) {
 
 Value Interpreter::invoke(Definition& def, std::vector<Value>& args) {
     if (args.size() != def.params.size()) {
-        throw ExecutionError(def.name + " expects " +
+        throw ExecutionError(def.name + " espera " +
                              std::to_string(def.params.size()) +
-                             " argument(s), got " + std::to_string(args.size()),
+                             " argumento(s), se obtuvo " + std::to_string(args.size()),
                              def.location);
     }
+
+    // traza (v0.2 §21.3 [OPC]): entry/return are printed at the caller's
+    // depth, so a pair brackets the callee's body (which itself prints one
+    // level deeper -- see visit(Assign&)). Formatted before args are moved
+    // into the frame below.
+    if (trace_depth_) {
+        std::string args_text;
+        for (std::size_t k = 0; k < args.size(); ++k) {
+            if (k) args_text += ", ";
+            args_text += format_value(args[k]);
+        }
+        std::cout << std::string(2 * depth_, ' ') << "\xE2\x86\x92 "
+                  << def.name << "(" << args_text << ")\n";
+    }
+
     if (++depth_ > kMaxCallDepth) {
         --depth_;
-        throw ExecutionError("call stack overflow in " + def.name +
-                             " (recursion without a base case?)");
+        throw ExecutionError("desbordamiento de la pila de llamadas en " + def.name +
+                             " (¿recursión sin caso base?)");
     }
 
     Environment frame;
@@ -452,6 +614,11 @@ Value Interpreter::invoke(Definition& def, std::vector<Value>& args) {
     }
     env_ = saved;
     --depth_;
+
+    if (trace_depth_) {
+        std::cout << std::string(2 * depth_, ' ') << "\xE2\x86\x90 "
+                  << format_value(result) << "\n";
+    }
     return result;
 }
 
@@ -479,6 +646,14 @@ void Interpreter::visit(ArrayLiteral& node) {
     items.reserve(node.elements.size());
     for (auto& e : node.elements) items.push_back(eval(*e));
     result_ = std::make_shared<Array>(std::move(items));
+}
+
+void Interpreter::visit(SetLiteral& node) {
+    // Conjunto's constructor is idempotent (spec §20.1: {3,1,2,1} -> {1,2,3}).
+    std::vector<Value> items;
+    items.reserve(node.elements.size());
+    for (auto& e : node.elements) items.push_back(eval(*e));
+    result_ = std::make_shared<Conjunto>(std::move(items));
 }
 
 void Interpreter::visit(Index& node) {
@@ -528,7 +703,7 @@ void Interpreter::visit(Unary& node) {
         result_ = ceil_value(eval(*node.operand));
         return;
     }
-    throw ExecutionError(std::string("unknown unary operator ") + to_string(op), node.location);
+    throw ExecutionError(std::string("operador unario desconocido ") + to_string(op), node.location);
 }
 
 void Interpreter::visit(Binary& node) {
@@ -577,7 +752,7 @@ void Interpreter::visit(Binary& node) {
     if (op == TokenKind::Mod) { result_ = modulo_values(left, right); return; }
     if (is_comparison(op)) { result_ = compare_values(op, left, right); return; }
 
-    throw ExecutionError(std::string("unknown binary operator ") + to_string(op), node.location);
+    throw ExecutionError(std::string("operador binario desconocido ") + to_string(op), node.location);
 }
 
 void Interpreter::visit(Call& node) {
@@ -606,7 +781,7 @@ void Interpreter::visit(Call& node) {
         return;
     }
 
-    throw ExecutionError("undefined function or procedure: " + name, node.location);
+    throw ExecutionError("función o procedimiento no definido: " + name, node.location);
 }
 
 // -- l-value helpers (for intercambia) ------------------------------
@@ -619,7 +794,7 @@ Value Interpreter::get_lvalue(Expr& node) {
         Value key = eval(*idx->index);
         return index_get(container, key);
     }
-    throw ExecutionError("intercambia expects variables or array cells");
+    throw ExecutionError("intercambia espera variables o celdas de arreglo");
 }
 
 void Interpreter::set_lvalue(Expr& node, Value value) {
@@ -633,11 +808,11 @@ void Interpreter::set_lvalue(Expr& node, Value value) {
         index_set(container, key, std::move(value));
         return;
     }
-    throw ExecutionError("intercambia expects variables or array cells");
+    throw ExecutionError("intercambia espera variables o celdas de arreglo");
 }
 
 Value Interpreter::swap_call(const std::vector<ExprPtr>& args) {
-    if (args.size() != 2) throw ExecutionError("intercambia expects exactly 2 arguments");
+    if (args.size() != 2) throw ExecutionError("intercambia espera exactamente 2 argumentos");
     Value va = get_lvalue(*args[0]);
     Value vb = get_lvalue(*args[1]);
     set_lvalue(*args[0], std::move(vb));
@@ -650,25 +825,37 @@ Value Interpreter::swap_call(const std::vector<ExprPtr>& args) {
 // ==========================================================================
 void Interpreter::visit(Assign& node) {
     Value value = eval(*node.value);
+    std::string trace_value_text = trace_depth_ ? format_value(value) : std::string();
+    std::string place = node.name;
     if (node.indices.empty()) {
         env_->define(node.name, std::move(value));
-        return;
+    } else {
+        Value container = env_->get(node.name);
+        std::vector<Value> keys;
+        keys.reserve(node.indices.size());
+        for (auto& idx_expr : node.indices) keys.push_back(eval(*idx_expr));
+        for (std::size_t k = 0; k + 1 < keys.size(); ++k) {
+            container = index_get(container, keys[k]);
+        }
+        if (trace_depth_) {
+            for (auto& key : keys) place += "[" + format_value(key) + "]";
+        }
+        index_set(container, keys.back(), std::move(value));
     }
-    Value container = env_->get(node.name);
-    std::vector<Value> keys;
-    keys.reserve(node.indices.size());
-    for (auto& idx_expr : node.indices) keys.push_back(eval(*idx_expr));
-    for (std::size_t k = 0; k + 1 < keys.size(); ++k) {
-        container = index_get(container, keys[k]);
+
+    // traza (v0.2 §21.3 [OPC]): one level deeper than the enclosing call's
+    // entry/return (spec's example shows "  lugar ← valor" with extra indent).
+    if (trace_depth_) {
+        std::cout << std::string(2 * depth_, ' ') << "  " << place
+                  << " \xE2\x86\x90 " << trace_value_text << "\n";
     }
-    index_set(container, keys.back(), std::move(value));
 }
 
 void Interpreter::visit(ForLoop& node) {
     Value start = eval(*node.start);
     Value end = eval(*node.end);
     if (!is_number(start) || !is_number(end)) {
-        throw ExecutionError("'para' bounds must be numeric", node.location);
+        throw ExecutionError("los límites de 'para' deben ser numéricos", node.location);
     }
     Value i = start;
     while (is_truthy(compare_values(TokenKind::Le, i, end))) {  // inclusive, step +1
@@ -676,6 +863,31 @@ void Interpreter::visit(ForLoop& node) {
         exec_block(node.body);
         i = arith_combine(TokenKind::Plus, i, Integer(1));
     }
+}
+
+void Interpreter::visit(ForEach& node) {
+    // spec §20.3, v0.2: a Conjunto iterates in canonical order (already how
+    // it stores its elements), an Array in index order. Mutating the
+    // collection while iterating it is explicitly undefined by the spec, so
+    // this just walks the live sequence with no defensive copy.
+    Value collection = eval(*node.collection);
+    if (auto a = std::get_if<ArrayPtr>(&collection)) {
+        for (const auto& item : (*a)->items()) {
+            env_->define(node.var, item);
+            exec_block(node.body);
+        }
+        return;
+    }
+    if (auto c = std::get_if<SetPtr>(&collection)) {
+        for (const auto& item : (*c)->items()) {
+            env_->define(node.var, item);
+            exec_block(node.body);
+        }
+        return;
+    }
+    throw ExecutionError(
+        "'para cada' requiere un arreglo o conjunto, se obtuvo " + format_value(collection),
+        node.location);
 }
 
 void Interpreter::visit(WhileLoop& node) {
@@ -703,5 +915,33 @@ void Interpreter::visit(ExprStatement& node) {
 }
 
 void Interpreter::visit(Prose&) { /* non-executable (spec §14) — no-op */ }
+
+void Interpreter::visit(Assert& node) {
+    // afirma expr [, "mensaje"] (spec §21.2, v0.2): reuses is_truthy (same
+    // rule as si/mientras) rather than requiring a strict 0/1 bit.
+    Value value = eval(*node.condition);
+    if (!is_truthy(value)) {
+        std::string text = "afirma falsa: " + expr_to_source(*node.condition);
+        if (node.message) text += " -- " + *node.message;
+        throw ExecutionError(text, node.location);
+    }
+}
+
+void Interpreter::visit(Trace& node) {
+    // traza expr (spec §21.3, v0.2 [OPC]): runs `expression` (typically a
+    // call) with entry/return/assignment tracing active for its dynamic
+    // extent; the expression's value is discarded (traza is run for its
+    // printed side effects, same as an ExprStatement). A counter, not a
+    // bool, so a nested traza already inside a traced call doesn't turn
+    // tracing off when it finishes.
+    ++trace_depth_;
+    try {
+        eval(*node.expression);
+    } catch (...) {
+        --trace_depth_;
+        throw;
+    }
+    --trace_depth_;
+}
 
 }  // namespace nemi

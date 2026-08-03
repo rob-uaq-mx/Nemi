@@ -7,17 +7,22 @@ module. The lexer, parser, evaluator, a from-scratch bignum/rational numeric
 tower, and a Spanish-flag CLI matching `python -m nemi` are all implemented
 and pass the full acceptance corpus.
 
-**Progress tracking:** the phased roadmap and checklist live in
-[`backlog.md`](backlog.md) — all 6 phases are done. What remains are two
-known, documented gaps (Windows `argv` UTF-8 decoding, byte- vs
+**Progress tracking:** the phased roadmap and checklist for the v0.1 core
+live in [`backlog.md`](backlog.md) — all 6 phases are done. What remains are
+two known, documented gaps (Windows `argv` UTF-8 decoding, byte- vs
 code-point-based string indexing) — see `backlog.md` "Riesgos / notas".
 
+On top of that core, the v0.2 **common library** (`Nemi.md` §19–§23 —
+`Conjunto`, `para cada`, dynamic lists, `afirma`/`traza`, string primitives,
+and the 6 real modules in [`../bibcom`](../bibcom)) is also complete; see
+[`../backlog_v0.2.md`](../backlog_v0.2.md) at the repo root for that phased
+history. `tests/corpus_test.cpp` now covers both: **82/82** (16 from the
+v0.1 §17 corpus + everything v0.2 added).
+
 Verified with **three real compilers**: clang++ and MSVC (Visual Studio 2022,
-`cl.exe` 19.42) locally — both give the identical 16/16 result — plus g++ in
-CI (`.github/workflows/ci.yml`; untested locally, only an ancient MinGW g++
-6.3 was available on the dev machine). This repo is not a git repository yet,
-so the CI workflow hasn't actually run — `check_all.ps1` at the repo root runs
-the same two checks locally, no git required.
+`cl.exe` 19.42) locally — both give the identical result — plus g++ in CI
+(`.github/workflows/ci.yml`). `check_all.ps1` at the repo root runs the
+Python + C++ suites locally in one shot.
 
 ## Build & test
 
@@ -28,9 +33,10 @@ $ ctest --test-dir build --output-on-failure
 ```
 
 The acceptance test (`tests/corpus_test.cpp`) loads the **shared** corpus in
-[`../examples`](../examples) — the same files the Python suite uses — and
-asserts the same §17 results, plus a bignum stress case (`factorial(100)`,
-158 digits). **16/16 pass.**
+[`../examples`](../examples) and the **shared** common library in
+[`../bibcom`](../bibcom) — the same files the Python suite uses — and
+asserts the same §17/§22 results, plus a bignum stress case
+(`factorial(100)`, 158 digits). **82/82 pass.**
 
 ```console
 $ ./build/nemi ../examples/factorial.nemi --llama "factorial(100)"
@@ -38,7 +44,14 @@ $ ./build/nemi ../examples/factorial.nemi --llama "factorial(100)"
 
 $ ./build/nemi ../examples/guion_factorial.nemi   # runs the script body (imprime output)
 $ ./build/nemi ../examples/factorial.nemi --asa   # pretty-prints the AST as readable Nemi
+$ ./build/nemi ../bibcom/bibcom.nemi --llama "C(52, 5)"   # the v0.2 common library
+2598960
 ```
+
+`-I DIR` (repeatable) adds a fallback directory searched for `incluye`
+targets not found next to the file that includes them — e.g.
+`nemi mio.nemi -I ../bibcom` to reach the common library without a relative
+`incluye` path back to it.
 
 ## Layout
 

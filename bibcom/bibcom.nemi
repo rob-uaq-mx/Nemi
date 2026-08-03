@@ -1,0 +1,9 @@
+# bibcom.nemi — agrega toda la biblioteca común con un solo incluye
+# (Nemi.md §19.3): incluye "bibcom.nemi" trae los seis módulos de una vez.
+
+incluye "teoria_numeros.nemi"
+incluye "conteo.nemi"
+incluye "conjuntos.nemi"
+incluye "relaciones.nemi"
+incluye "booleana.nemi"
+incluye "cadenas.nemi"

@@ -1,0 +1,69 @@
+# teoria_numeros.nemi — Unidad 2 (solo núcleo aritmético)
+# Nemi.md §22.1
+
+función mcd(a, b)
+    si a < b
+        intercambia(a, b)
+    fin si
+    mientras b ≠ 0
+        r ← a mod b
+        a ← b
+        b ← r
+    fin mientras
+    regresa a
+fin función
+
+función mcm(a, b)
+    regresa ⌊(a · b) / mcd(a, b)⌋
+fin función
+
+función primo(n)
+    si n < 2
+        regresa 0
+    fin si
+    para d ← 2 hasta ⌊√n⌋
+        si n mod d = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función exp_mod(a, n, z)
+    resultado ← 1
+    x ← a mod z
+    mientras n > 0
+        si n mod 2 = 1
+            resultado ← (resultado · x) mod z
+        fin si
+        x ← (x · x) mod z
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función
+
+función euclides_extendido(a, b)      # regresa [d, s, t] con s·a + t·b = d
+    si b = 0
+        regresa [a, 1, 0]
+    fin si
+    r ← euclides_extendido(b, a mod b)
+    regresa [r[1], r[3], r[2] − ⌊a / b⌋ · r[3]]
+fin función
+
+función mod_inv(a, m)                  # inverso de a módulo m, o −1 si no existe
+    r ← euclides_extendido(a mod m, m)
+    si r[1] ≠ 1
+        regresa −1
+    fin si
+    regresa r[2] mod m
+fin función
+
+# --- pruebas ---
+afirma mcd(504, 396) = 36
+afirma mcm(4, 6) = 12
+afirma primo(97) = 1
+afirma primo(51) = 0
+afirma exp_mod(7, 13, 11) = 2
+afirma exp_mod(572, 29, 713) = 113
+afirma mod_inv(3, 7) = 5
+afirma euclides_extendido(240, 46)[1] = 2

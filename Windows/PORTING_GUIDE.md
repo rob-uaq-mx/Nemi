@@ -1,5 +1,11 @@
 # Guía de portación a C++ (paso a paso, para principiantes)
 
+> Esta guía cubre solo el **núcleo v0.1** (Fases 0–6 de `backlog.md`); el
+> port de la biblioteca común v0.2 (`Conjunto`, `afirma`/`traza`, `bibcom/`,
+> …) que vino después no tiene una guía paso a paso equivalente — su
+> historia fase por fase, con decisiones y bugs reales encontrados, está en
+> [`../backlog_v0.2.md`](../backlog_v0.2.md).
+
 Esta guía acompaña al [`backlog.md`](backlog.md). Su objetivo es que **alguien
 con poca experiencia** (o un asistente automático sencillo) pueda completar el
 intérprete de Nemi en C++ traduciendo, pieza por pieza, la implementación de

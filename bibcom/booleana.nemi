@@ -1,0 +1,65 @@
+# booleana.nemi — Unidad 4
+# Nemi.md §22.5
+# Una función booleana de n variables se representa como un arreglo t de 2^n
+# bits: t[k+1] es el valor sobre la entrada k (0 ≤ k < 2^n), donde k en binario
+# es (x1 x2 … xn) con x1 el bit más significativo (convención de mintérmino m_k).
+
+función nand(a, b)
+    regresa ¬(a ∧ b)
+fin función
+
+función nor(a, b)
+    regresa ¬(a ∨ b)
+fin función
+
+función xor(a, b)
+    regresa (a ∧ ¬b) ∨ (¬a ∧ b)
+fin función
+
+función xnor(a, b)
+    regresa ¬xor(a, b)
+fin función
+
+función filas(n)                       # 2^n
+    f ← 1
+    para i ← 1 hasta n
+        f ← f · 2
+    fin para
+    regresa f
+fin función
+
+función minterminos(t, n)              # lista de k con t[k+1] = 1
+    res ← []
+    para k ← 0 hasta filas(n) − 1
+        si t[k + 1] = 1
+            agrega(res, k)
+        fin si
+    fin para
+    regresa res
+fin función
+
+función equivalentes(t1, t2, n)        # ¿misma tabla de verdad?
+    para k ← 0 hasta filas(n) − 1
+        si t1[k + 1] ≠ t2[k + 1]
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función evalua(t, bits, n)             # valor de t sobre la entrada (bits[1..n])
+    k ← 0
+    para i ← 1 hasta n
+        k ← k · 2 + bits[i]
+    fin para
+    regresa t[k + 1]
+fin función
+
+# --- pruebas ---
+afirma xor(1, 1) = 0
+afirma nand(1, 1) = 0
+afirma nor(0, 0) = 1
+afirma minterminos([0, 1, 1, 0], 2) = [1, 2]           # XOR de 2 variables
+afirma equivalentes([0, 1, 1, 0], [0, 1, 1, 0], 2) = 1
+afirma minterminos([0,0,0,1,0,1,1,1], 3) = [3, 5, 6, 7] # mayoría: c = ∑m(3,5,6,7)
+afirma evalua([0,0,0,1,0,1,1,1], [1, 1, 0], 3) = 1

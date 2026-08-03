@@ -27,7 +27,7 @@ from fractions import Fraction
 from . import ast_nodes as ast
 from .errors import ExecutionError
 from .tokens import TokenKind as T
-from .values import Array, format_value, from_python, is_truthy
+from .values import Array, Conjunto, format_value, from_python, is_truthy
 
 # How deep Nemi's own call stack may go before we report a friendly overflow
 # (spec §16: "recursion without a base case"). Well below Python's own limit.
@@ -63,7 +63,7 @@ class Environment:
         try:
             return self._vars[name]
         except KeyError:
-            raise ExecutionError(f"undefined variable: {name}")
+            raise ExecutionError(f"variable no definida: {name}")
 
     def has(self, name):
         return name in self._vars
@@ -74,6 +74,54 @@ def _is_number(value):
     return isinstance(value, (int, Fraction, float)) and not isinstance(value, bool)
 
 
+# Operator -> Nemi symbol, for _expr_to_source below (afirma's error message
+# quotes the failing expression; §21.2 needs the source text, and since the
+# lexer/parser don't track raw text spans, this reconstructs equivalent Nemi
+# syntax from the AST instead -- simpler than plumbing byte offsets through
+# every token, and it's always exactly consistent with how the expression was
+# actually parsed).
+_OP_SYMBOLS = {
+    T.EQ: "=", T.NE: "≠", T.LT: "<", T.LE: "≤", T.GT: ">", T.GE: "≥",
+    T.IN: "∈", T.WITHIN: "∈", T.NOTIN: "∉", T.SUBSETEQ: "⊆", T.SUBSET: "⊂",
+    T.PLUS: "+", T.MINUS: "−", T.TIMES: "·", T.DIVIDE: "/", T.MOD: "mod",
+    T.AND: "∧", T.OR: "∨", T.NOT: "¬", T.SQRT: "√",
+}
+
+
+def _expr_to_source(expr):
+    """Render an expression back to (roughly) the Nemi syntax it came from."""
+    if isinstance(expr, ast.IntLiteral):
+        return str(expr.value)
+    if isinstance(expr, ast.RealLiteral):
+        return str(expr.value)
+    if isinstance(expr, ast.StringLiteral):
+        return f'"{expr.value}"'
+    if isinstance(expr, ast.Variable):
+        return expr.name
+    if isinstance(expr, ast.ArrayLiteral):
+        return "[" + ", ".join(_expr_to_source(e) for e in expr.elements) + "]"
+    if isinstance(expr, ast.SetLiteral):
+        if not expr.elements:
+            return "∅"
+        return "{" + ", ".join(_expr_to_source(e) for e in expr.elements) + "}"
+    if isinstance(expr, ast.Index):
+        return f"{_expr_to_source(expr.base)}[{_expr_to_source(expr.index)}]"
+    if isinstance(expr, ast.Call):
+        args = ", ".join(_expr_to_source(a) for a in expr.args)
+        return f"{expr.name}({args})"
+    if isinstance(expr, ast.Unary):
+        if expr.op is T.LFLOOR:
+            return f"⌊{_expr_to_source(expr.operand)}⌋"
+        if expr.op is T.LCEIL:
+            return f"⌈{_expr_to_source(expr.operand)}⌉"
+        symbol = _OP_SYMBOLS.get(expr.op, expr.op.name)
+        return f"({symbol} {_expr_to_source(expr.operand)})"
+    if isinstance(expr, ast.Binary):
+        symbol = _OP_SYMBOLS.get(expr.op, expr.op.name)
+        return f"({_expr_to_source(expr.left)} {symbol} {_expr_to_source(expr.right)})"
+    return "?expr?"
+
+
 class Interpreter:
     """Evaluates a program and exposes :meth:`call` as the host entry point."""
 
@@ -81,10 +129,14 @@ class Interpreter:
         self._functions = {}
         for defn in program.definitions:
             if defn.name in self._functions:
-                raise ExecutionError(f"duplicate definition: {defn.name}")
+                raise ExecutionError(f"definición duplicada: {defn.name}")
             self._functions[defn.name] = defn
         self._main = program.main
         self._depth = 0
+        # traza (spec §21.3, v0.2 [OPC]): a counter, not a bool, so a nested
+        # `traza` inside an already-traced call doesn't turn tracing off when
+        # it finishes -- the outer traza's dynamic extent keeps it active.
+        self._trace_depth = 0
         # Nemi recursion uses several Python frames per call; lift the host
         # limit so we reach our own friendlier _MAX_CALL_DEPTH first.
         if sys.getrecursionlimit() < 200000:
@@ -93,17 +145,21 @@ class Interpreter:
         self._stmt_dispatch = {
             ast.Assign: self._exec_assign,
             ast.ForLoop: self._exec_for,
+            ast.ForEach: self._exec_for_each,
             ast.WhileLoop: self._exec_while,
             ast.If: self._exec_if,
             ast.Return: self._exec_return,
             ast.ExprStatement: self._exec_expr_statement,
             ast.Prose: self._exec_prose,
+            ast.Assert: self._exec_assert,
+            ast.Trace: self._exec_trace,
         }
         self._expr_dispatch = {
             ast.IntLiteral: lambda n, e: n.value,
             ast.RealLiteral: lambda n, e: n.value,
             ast.StringLiteral: lambda n, e: n.value,
             ast.ArrayLiteral: self._eval_array_literal,
+            ast.SetLiteral: self._eval_set_literal,
             ast.Variable: lambda n, e: e.get(n.name),
             ast.Index: self._eval_index,
             ast.Call: self._eval_call,
@@ -141,7 +197,7 @@ class Interpreter:
         """
         defn = self._functions.get(name)
         if defn is None:
-            raise ExecutionError(f"undefined function or procedure: {name}")
+            raise ExecutionError(f"función o procedimiento no definido: {name}")
         args = [from_python(a) for a in python_args]
         return self._invoke(defn, args)
 
@@ -151,28 +207,41 @@ class Interpreter:
     def _invoke(self, defn, args):
         if len(args) != len(defn.params):
             raise ExecutionError(
-                f"{defn.name} expects {len(defn.params)} argument(s), "
-                f"got {len(args)}",
+                f"{defn.name} espera {len(defn.params)} argumento(s), "
+                f"se obtuvo {len(args)}",
                 defn.location,
             )
         frame = Environment()
         for name, value in zip(defn.params, args):
             frame.define(name, value)
 
+        # traza (spec §21.3, v0.2 [OPC]): entry/return are printed at the
+        # caller's depth, so a pair brackets the callee's body (which itself
+        # prints one level deeper -- see _exec_assign).
+        if self._trace_depth:
+            indent = "  " * self._depth
+            args_text = ", ".join(format_value(a) for a in args)
+            print(f"{indent}→ {defn.name}({args_text})")
+
         self._depth += 1
         if self._depth > _MAX_CALL_DEPTH:
             self._depth -= 1
             raise ExecutionError(
-                f"call stack overflow in {defn.name} "
-                f"(recursion without a base case?)"
+                f"desbordamiento de la pila de llamadas en {defn.name} "
+                f"(¿recursión sin caso base?)"
             )
         try:
             self._exec_block(defn.body, frame)
+            result = None  # fell off the end (a value-less return)
         except ReturnSignal as sig:
-            return sig.value
+            result = sig.value
         finally:
             self._depth -= 1
-        return None  # fell off the end (a value-less return)
+
+        if self._trace_depth:
+            indent = "  " * self._depth
+            print(f"{indent}← {format_value(result)}")
+        return result
 
     def _exec_block(self, statements, env):
         for stmt in statements:
@@ -185,23 +254,51 @@ class Interpreter:
         value = self._eval(node.value, env)
         if not node.indices:
             env.define(node.name, value)
-            return
-        container = env.get(node.name)
-        keys = [self._eval(i, env) for i in node.indices]
-        for key in keys[:-1]:
-            container = self._index_get(container, key)
-        self._index_set(container, keys[-1], value)
+            place = node.name
+        else:
+            container = env.get(node.name)
+            keys = [self._eval(i, env) for i in node.indices]
+            for key in keys[:-1]:
+                container = self._index_get(container, key)
+            self._index_set(container, keys[-1], value)
+            place = node.name + "".join(f"[{format_value(k)}]" for k in keys)
+
+        if self._trace_depth:
+            # one level deeper than the enclosing call's entry/return (spec
+            # §21.3's example shows "  lugar ← valor" with extra indent).
+            indent = "  " * self._depth
+            print(f"{indent}  {place} ← {format_value(value)}")
 
     def _exec_for(self, node, env):
         start = self._eval(node.start, env)
         end = self._eval(node.end, env)
         if not _is_number(start) or not _is_number(end):
-            raise ExecutionError("'para' bounds must be numeric", node.location)
+            raise ExecutionError("los límites de 'para' deben ser numéricos", node.location)
         i = start
         while i <= end:                 # inclusive, step +1 (spec §12)
             env.define(node.var, i)
             self._exec_block(node.body, env)
             i = i + 1
+
+    def _exec_for_each(self, node, env):
+        # ForEach (spec §20.3, v0.2): a Conjunto iterates in canonical order
+        # (already how Conjunto stores its elements), an Array in index
+        # order. Mutating the collection while iterating it is explicitly
+        # undefined by the spec, so this just walks the live sequence with
+        # no defensive copy -- Python's own iteration semantics apply.
+        collection = self._eval(node.collection, env)
+        if isinstance(collection, Array):
+            items = collection.items()
+        elif isinstance(collection, Conjunto):
+            items = collection.items()
+        else:
+            raise ExecutionError(
+                f"'para cada' requiere un arreglo o conjunto, se obtuvo {format_value(collection)}",
+                node.location,
+            )
+        for item in items:
+            env.define(node.var, item)
+            self._exec_block(node.body, env)
 
     def _exec_while(self, node, env):
         while is_truthy(self._eval(node.condition, env)):
@@ -223,6 +320,28 @@ class Interpreter:
     def _exec_prose(self, node, env):
         pass  # non-executable prose action (spec §14)
 
+    def _exec_assert(self, node, env):
+        # afirma expr [, "mensaje"] (spec §21.2, v0.2): self-check the
+        # student runs against known values. Reuses is_truthy (same rule as
+        # si/mientras) rather than requiring a strict 0/1 bit.
+        value = self._eval(node.condition, env)
+        if not is_truthy(value):
+            text = f"afirma falsa: {_expr_to_source(node.condition)}"
+            if node.message is not None:
+                text += f" -- {node.message}"
+            raise ExecutionError(text, node.location)
+
+    def _exec_trace(self, node, env):
+        # traza expr (spec §21.3, v0.2 [OPC]): runs `expression` (typically a
+        # call) with entry/return/assignment tracing active for its dynamic
+        # extent; the expression's value is discarded (traza is run for its
+        # printed side effects, same as an ExprStatement).
+        self._trace_depth += 1
+        try:
+            self._eval(node.expression, env)
+        finally:
+            self._trace_depth -= 1
+
     # ==================================================================
     # Expressions
     # ==================================================================
@@ -231,6 +350,10 @@ class Interpreter:
 
     def _eval_array_literal(self, node, env):
         return Array([self._eval(e, env) for e in node.elements])
+
+    def _eval_set_literal(self, node, env):
+        # Conjunto's constructor is idempotent (spec §20.1: {3,1,2,1} -> {1,2,3}).
+        return Conjunto(self._eval(e, env) for e in node.elements)
 
     def _eval_index(self, node, env):
         container = self._eval(node.base, env)
@@ -243,22 +366,22 @@ class Interpreter:
         if isinstance(container, str):
             idx = self._string_index(container, key)
             return container[idx]
-        raise ExecutionError(f"value is not indexable: {format_value(container)}")
+        raise ExecutionError(f"el valor no es indexable: {format_value(container)}")
 
     def _index_set(self, container, key, value):
         if isinstance(container, Array):
             container.set(key, value)
             return
         if isinstance(container, str):
-            raise ExecutionError("strings are immutable; cannot assign to s[i]")
-        raise ExecutionError(f"value is not indexable: {format_value(container)}")
+            raise ExecutionError("las cadenas son inmutables; no se puede asignar a s[i]")
+        raise ExecutionError(f"el valor no es indexable: {format_value(container)}")
 
     @staticmethod
     def _string_index(s, key):
         if not isinstance(key, int) or isinstance(key, bool):
-            raise ExecutionError(f"string index must be an integer, got {key!r}")
+            raise ExecutionError(f"el índice de cadena debe ser un entero, se obtuvo {key!r}")
         if key < 1 or key > len(s):
-            raise ExecutionError(f"index {key} out of range 1..{len(s)}")
+            raise ExecutionError(f"índice {key} fuera de rango 1..{len(s)}")
         return key - 1
 
     # -- unary ----------------------------------------------------------
@@ -275,7 +398,7 @@ class Interpreter:
             return self._floor(node.operand, env)
         if op is T.LCEIL:
             return math.ceil(self._require_real(self._eval(node.operand, env)))
-        raise ExecutionError(f"unknown unary operator {op.name}", node.location)
+        raise ExecutionError(f"operador unario desconocido {op.name}", node.location)
 
     def _floor(self, operand, env):
         # Exact ⌊√n⌋ for a non-negative integer n (keeps primality/bignum sound).
@@ -290,18 +413,18 @@ class Interpreter:
         if _is_number(value):
             return value
         raise ExecutionError(
-            f"expected a number, got {format_value(value)}"
+            f"se esperaba un número, se obtuvo {format_value(value)}"
         )
 
     def _negate(self, value):
         if not _is_number(value):
-            raise ExecutionError(f"cannot negate {format_value(value)}")
+            raise ExecutionError(f"no se puede negar {format_value(value)}")
         return -value
 
     def _sqrt(self, value):
         v = self._require_real(value)
         if v < 0:
-            raise ExecutionError("√ of a negative number")
+            raise ExecutionError("√ de un número negativo")
         if isinstance(v, int):
             root = math.isqrt(v)
             return root if root * root == v else math.sqrt(v)
@@ -344,23 +467,23 @@ class Interpreter:
             return self._modulo(left, right)
         if op in _COMPARATORS:
             return self._compare(op, left, right)
-        raise ExecutionError(f"unknown binary operator {op.name}", node.location)
+        raise ExecutionError(f"operador binario desconocido {op.name}", node.location)
 
     @staticmethod
     def _arith(left, right, fn, symbol):
         if _is_number(left) and _is_number(right):
             return fn(left, right)
         raise ExecutionError(
-            f"operator '{symbol}' needs numbers, got "
-            f"{format_value(left)} and {format_value(right)}"
+            f"el operador '{symbol}' requiere números, se obtuvo "
+            f"{format_value(left)} y {format_value(right)}"
         )
 
     @staticmethod
     def _divide(left, right):
         if not (_is_number(left) and _is_number(right)):
-            raise ExecutionError("operator '/' needs numbers")
+            raise ExecutionError("el operador '/' requiere números")
         if right == 0:
-            raise ExecutionError("division by zero")
+            raise ExecutionError("división entre cero")
         if isinstance(left, int) and isinstance(right, int):
             return Fraction(left, right)      # exact; ⌊·⌋ recovers integers
         return left / right
@@ -369,9 +492,9 @@ class Interpreter:
     def _modulo(left, right):
         if not (isinstance(left, int) and isinstance(right, int)) \
                 or isinstance(left, bool) or isinstance(right, bool):
-            raise ExecutionError("operator 'mod' needs integers")
+            raise ExecutionError("el operador 'mod' requiere enteros")
         if right == 0:
-            raise ExecutionError("modulo by zero")
+            raise ExecutionError("módulo entre cero")
         return left % right
 
     @staticmethod
@@ -380,6 +503,22 @@ class Interpreter:
             return left == right
         if op is T.NE:
             return left != right
+        if op is T.IN or op is T.WITHIN or op is T.NOTIN:
+            if not isinstance(right, Conjunto):
+                raise ExecutionError(
+                    f"'{'∉' if op is T.NOTIN else '∈'}' requiere un conjunto a la "
+                    f"derecha, se obtuvo {format_value(right)}"
+                )
+            member = right.contains(left)
+            return member if op is not T.NOTIN else not member
+        if op is T.SUBSETEQ or op is T.SUBSET:
+            symbol = "⊆" if op is T.SUBSETEQ else "⊂"
+            if not (isinstance(left, Conjunto) and isinstance(right, Conjunto)):
+                raise ExecutionError(
+                    f"'{symbol}' requiere dos conjuntos, se obtuvo {format_value(left)} "
+                    f"y {format_value(right)}"
+                )
+            return left.is_subset(right) if op is T.SUBSETEQ else left.is_proper_subset(right)
         try:
             if op is T.LT:
                 return left < right
@@ -391,9 +530,9 @@ class Interpreter:
                 return left >= right
         except TypeError:
             raise ExecutionError(
-                f"cannot order {format_value(left)} and {format_value(right)}"
+                f"no se pueden ordenar {format_value(left)} y {format_value(right)}"
             )
-        raise ExecutionError(f"unknown comparison {op.name}")
+        raise ExecutionError(f"comparación desconocida {op.name}")
 
     @staticmethod
     def _logic_result(result, *operands):
@@ -427,7 +566,7 @@ class Interpreter:
             return primitive(self, args)
 
         raise ExecutionError(
-            f"undefined function or procedure: {name}", node.location
+            f"función o procedimiento no definido: {name}", node.location
         )
 
     # -- l-value helpers (for intercambia) ------------------------------
@@ -438,7 +577,7 @@ class Interpreter:
             container = self._eval(node.base, env)
             key = self._eval(node.index, env)
             return self._index_get(container, key)
-        raise ExecutionError("intercambia expects variables or array cells")
+        raise ExecutionError("intercambia espera variables o celdas de arreglo")
 
     def _set_lvalue(self, node, env, value):
         if isinstance(node, ast.Variable):
@@ -449,11 +588,11 @@ class Interpreter:
             key = self._eval(node.index, env)
             self._index_set(container, key, value)
             return
-        raise ExecutionError("intercambia expects variables or array cells")
+        raise ExecutionError("intercambia espera variables o celdas de arreglo")
 
     def _swap(self, args, env):
         if len(args) != 2:
-            raise ExecutionError("intercambia expects exactly 2 arguments")
+            raise ExecutionError("intercambia espera exactamente 2 argumentos")
         a, b = args
         va = self._get_lvalue(a, env)
         vb = self._get_lvalue(b, env)
@@ -466,7 +605,9 @@ class Interpreter:
 # Value-returning primitives (spec §15). ``intercambia`` is handled in the
 # interpreter because it needs l-values rather than evaluated arguments.
 # --------------------------------------------------------------------------
-_COMPARATORS = frozenset({T.EQ, T.NE, T.LT, T.LE, T.GT, T.GE})
+_COMPARATORS = frozenset(
+    {T.EQ, T.NE, T.LT, T.LE, T.GT, T.GE, T.IN, T.WITHIN, T.NOTIN, T.SUBSETEQ, T.SUBSET}
+)
 
 
 def _prim_floor(interp, args):
@@ -501,7 +642,130 @@ def _prim_length(interp, args):
         return value.length()
     if isinstance(value, str):
         return len(value)
-    raise ExecutionError("long expects an array or string")
+    if isinstance(value, Conjunto):
+        return value.cardinality()
+    raise ExecutionError("long espera un arreglo, cadena o conjunto")
+
+
+# -- String primitives (spec §22.6, v0.2) ----------------------------------
+# `long(s)` and indexing `s[i]` (base 1, a length-1 string) already exist
+# above/in _index_get; these three round out what cadenas.nemi needs.
+def _prim_concatena(interp, args):
+    _arity("concatena", args, 2)
+    s, t = args
+    if not isinstance(s, str) or not isinstance(t, str):
+        raise ExecutionError(
+            f"concatena espera dos cadenas, se obtuvo {format_value(s)}, {format_value(t)}"
+        )
+    return s + t
+
+
+def _prim_texto(interp, args):
+    _arity("texto", args, 1)
+    value = args[0]
+    if not _is_number(value):
+        raise ExecutionError(f"texto espera un número, se obtuvo {format_value(value)}")
+    return format_value(value)  # same rendering imprime/afirma already use
+
+
+def _prim_valor(interp, args):
+    _arity("valor", args, 1)
+    value = args[0]
+    if not isinstance(value, str) or len(value) != 1 or not ("0" <= value <= "9"):
+        raise ExecutionError(
+            f"valor espera un carácter de un solo dígito, se obtuvo {format_value(value)}"
+        )
+    return ord(value) - ord("0")
+
+
+# -- Conjunto primitives (spec §20.2, v0.2) --------------------------------
+def _require_set(name, value):
+    if not isinstance(value, Conjunto):
+        raise ExecutionError(f"{name} espera un conjunto, se obtuvo {format_value(value)}")
+    return value
+
+
+def _prim_pertenece(interp, args):
+    _arity("pertenece", args, 2)
+    return _require_set("pertenece", args[1]).contains(args[0])
+
+
+def _prim_subconjunto(interp, args):
+    _arity("subconjunto", args, 2)
+    a = _require_set("subconjunto", args[0])
+    b = _require_set("subconjunto", args[1])
+    return a.is_subset(b)
+
+
+def _prim_union(interp, args):
+    _arity("union", args, 2)
+    a = _require_set("union", args[0])
+    b = _require_set("union", args[1])
+    return a.union(b)
+
+
+def _prim_interseccion(interp, args):
+    _arity("interseccion", args, 2)
+    a = _require_set("interseccion", args[0])
+    b = _require_set("interseccion", args[1])
+    return a.intersection(b)
+
+
+def _prim_diferencia(interp, args):
+    _arity("diferencia", args, 2)
+    a = _require_set("diferencia", args[0])
+    b = _require_set("diferencia", args[1])
+    return a.difference(b)
+
+
+def _prim_cardinalidad(interp, args):
+    _arity("cardinalidad", args, 1)
+    return _require_set("cardinalidad", args[0]).cardinality()
+
+
+# -- Dynamic lists (spec §20.4, v0.2) --------------------------------------
+def _prim_agrega(interp, args):
+    _arity("agrega", args, 2)
+    a, x = args
+    if isinstance(a, Array):
+        a.append(x)  # grows the list, mutating by reference
+        return None
+    if isinstance(a, Conjunto):
+        a.add(x)  # idempotent insert (§20.2)
+        return None
+    raise ExecutionError(f"agrega espera un arreglo o conjunto, se obtuvo {format_value(a)}")
+
+
+def _deep_copy(value):
+    if isinstance(value, Array):
+        return Array([_deep_copy(x) for x in value.items()])
+    if isinstance(value, Conjunto):
+        return Conjunto(_deep_copy(x) for x in value.items())
+    return value  # scalars (int/Fraction/float/bool/str) are already immutable
+
+
+def _prim_copia(interp, args):
+    _arity("copia", args, 1)
+    return _deep_copy(args[0])
+
+
+def _require_nonneg_int(name, value):
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise ExecutionError(f"{name} espera un entero no negativo, se obtuvo {format_value(value)}")
+    return value
+
+
+def _prim_arreglo_cero(interp, args):
+    _arity("arreglo_cero", args, 1)
+    n = _require_nonneg_int("arreglo_cero", args[0])
+    return Array([0] * n)
+
+
+def _prim_matriz_cero(interp, args):
+    _arity("matriz_cero", args, 2)
+    m = _require_nonneg_int("matriz_cero", args[0])
+    n = _require_nonneg_int("matriz_cero", args[1])
+    return Array([Array([0] * n) for _ in range(m)])
 
 
 def _prim_print(interp, args):
@@ -514,7 +778,7 @@ def _prim_print(interp, args):
 
 def _arity(name, args, n):
     if len(args) != n:
-        raise ExecutionError(f"{name} expects {n} argument(s), got {len(args)}")
+        raise ExecutionError(f"{name} espera {n} argumento(s), se obtuvo {len(args)}")
 
 
 _PRIMITIVES = {
@@ -525,5 +789,18 @@ _PRIMITIVES = {
     "abs": _prim_abs,
     "mod": _prim_mod,
     "long": _prim_length,
+    "concatena": _prim_concatena,
+    "texto": _prim_texto,
+    "valor": _prim_valor,
     "imprime": _prim_print,
+    "pertenece": _prim_pertenece,
+    "subconjunto": _prim_subconjunto,
+    "union": _prim_union,
+    "interseccion": _prim_interseccion,
+    "diferencia": _prim_diferencia,
+    "cardinalidad": _prim_cardinalidad,
+    "agrega": _prim_agrega,
+    "copia": _prim_copia,
+    "arreglo_cero": _prim_arreglo_cero,
+    "matriz_cero": _prim_matriz_cero,
 }

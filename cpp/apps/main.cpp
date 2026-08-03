@@ -18,6 +18,7 @@
 #include "nemi/loader.hpp"
 #include "nemi/nemi.hpp"
 #include "nemi/parser.hpp"
+#include "nemi/pretty.hpp"
 
 #if defined(_WIN32)
 #  include <windows.h>
@@ -40,13 +41,14 @@ void force_utf8() {
 }
 
 int usage() {
-    std::cerr << "uso: nemi ARCHIVO.nemi [...] [--llama \"expr\"] [--lexemas] [--asa]\n";
+    std::cerr << "uso: nemi ARCHIVO.nemi [...] [--llama \"expr\"] [--lexemas] [--asa] "
+                 "[-I DIR]\n";
     return 2;
 }
 
 void print_help() {
     std::cout <<
-        "uso: nemi [-a] [--llama EXPRESI\xC3\x93N] [--lexemas] [--asa]\n"
+        "uso: nemi [-a] [--llama EXPRESI\xC3\x93N] [--lexemas] [--asa] [-I DIR]\n"
         "          ARCHIVO.nemi [ARCHIVO.nemi ...]\n\n"
         "Intérprete de Nemi\n\n"
         "positional arguments:\n"
@@ -56,99 +58,21 @@ void print_help() {
         "  --llama EXPRESI\xC3\x93N  eval\xC3\xBA" "a una expresi\xC3\xB3n de llamada contra las\n"
         "                     definiciones cargadas\n"
         "  --lexemas          imprime los lexemas (tokens) y termina\n"
-        "  --asa              imprime el \xC3\xA1rbol sint\xC3\xA1" "ctico abstracto (ASA) y termina\n";
+        "  --asa              imprime el \xC3\xA1rbol sint\xC3\xA1" "ctico abstracto (ASA) y termina\n"
+        "  -I, --incluye-dir DIR  directorio adicional donde buscar los\n"
+        "                     archivos de 'incluye' (repetible; se prueba\n"
+        "                     despu\xC3\xA9s del directorio del archivo que incluye)\n";
 }
 
 // ---- --asa: a small, readable pretty-printer for the parsed AST -----------
 // (Diagnostic-only; not exercised by the acceptance corpus. Mirrors the
 // Python CLI's --asa in scope: prints only `definitions`, not the top-level
 // `main` script body — see PORTING_GUIDE.md if you want to extend it.)
-
-// Renders an operator as its Nemi symbol (e.g. Eq -> "=") rather than the
-// bare enumerator name, so the dump reads like Nemi source, not C++ internals.
-const char* op_symbol(nemi::TokenKind op) {
-    using nemi::TokenKind;
-    switch (op) {
-        case TokenKind::Eq: return "=";
-        case TokenKind::Ne: return "\xE2\x89\xA0";       // ≠
-        case TokenKind::Lt: return "<";
-        case TokenKind::Le: return "\xE2\x89\xA4";       // ≤
-        case TokenKind::Gt: return ">";
-        case TokenKind::Ge: return "\xE2\x89\xA5";       // ≥
-        case TokenKind::Plus: return "+";
-        case TokenKind::Minus: return "\xE2\x88\x92";    // −
-        case TokenKind::Times: return "\xC2\xB7";        // ·
-        case TokenKind::Divide: return "/";
-        case TokenKind::Mod: return "mod";
-        case TokenKind::And: return "\xE2\x88\xA7";      // ∧
-        case TokenKind::Or: return "\xE2\x88\xA8";       // ∨
-        case TokenKind::Not: return "\xC2\xAC";          // ¬
-        case TokenKind::Sqrt: return "\xE2\x88\x9A";     // √
-        default: return nemi::to_string(op);
-    }
-}
-
-void print_expr(std::ostream& os, nemi::Expr& e);
-
-void print_expr(std::ostream& os, nemi::Expr& e) {
-    using namespace nemi;
-    if (auto* n = dynamic_cast<IntLiteral*>(&e)) { os << n->value.to_decimal(); return; }
-    if (auto* n = dynamic_cast<RealLiteral*>(&e)) { os << n->value; return; }
-    if (auto* n = dynamic_cast<StringLiteral*>(&e)) { os << '"' << n->value << '"'; return; }
-    if (auto* n = dynamic_cast<Variable*>(&e)) { os << n->name; return; }
-    if (auto* n = dynamic_cast<ArrayLiteral*>(&e)) {
-        os << "[";
-        for (std::size_t i = 0; i < n->elements.size(); ++i) {
-            if (i) os << ", ";
-            print_expr(os, *n->elements[i]);
-        }
-        os << "]";
-        return;
-    }
-    if (auto* n = dynamic_cast<Index*>(&e)) {
-        print_expr(os, *n->base);
-        os << "[";
-        print_expr(os, *n->index);
-        os << "]";
-        return;
-    }
-    if (auto* n = dynamic_cast<Call*>(&e)) {
-        os << n->name << "(";
-        for (std::size_t i = 0; i < n->args.size(); ++i) {
-            if (i) os << ", ";
-            print_expr(os, *n->args[i]);
-        }
-        os << ")";
-        return;
-    }
-    if (auto* n = dynamic_cast<Unary*>(&e)) {
-        if (n->op == TokenKind::LFloor) {
-            os << "\xE2\x8C\x8A";  // ⌊
-            print_expr(os, *n->operand);
-            os << "\xE2\x8C\x8B";  // ⌋
-            return;
-        }
-        if (n->op == TokenKind::LCeil) {
-            os << "\xE2\x8C\x88";  // ⌈
-            print_expr(os, *n->operand);
-            os << "\xE2\x8C\x89";  // ⌉
-            return;
-        }
-        os << "(" << op_symbol(n->op) << " ";
-        print_expr(os, *n->operand);
-        os << ")";
-        return;
-    }
-    if (auto* n = dynamic_cast<Binary*>(&e)) {
-        os << "(";
-        print_expr(os, *n->left);
-        os << " " << op_symbol(n->op) << " ";
-        print_expr(os, *n->right);
-        os << ")";
-        return;
-    }
-    os << "?expr?";
-}
+// Expression rendering (`nemi::print_expr_source`) lives in the shared
+// `nemi/pretty.hpp` now, not here -- `afirma` (spec §21.2, v0.2) needs the
+// same rendering at runtime, in the core library, not just for this CLI
+// diagnostic.
+using nemi::print_expr_source;
 
 void print_indent(std::ostream& os, int indent) {
     for (int i = 0; i < indent; ++i) os << "    ";
@@ -165,17 +89,26 @@ void print_stmt(std::ostream& os, nemi::Stmt& s, int indent) {
     print_indent(os, indent);
     if (auto* n = dynamic_cast<Assign*>(&s)) {
         os << n->name;
-        for (auto& idx : n->indices) { os << "["; print_expr(os, *idx); os << "]"; }
+        for (auto& idx : n->indices) { os << "["; print_expr_source(os, *idx); os << "]"; }
         os << " <- ";
-        print_expr(os, *n->value);
+        print_expr_source(os, *n->value);
         os << "\n";
         return;
     }
     if (auto* n = dynamic_cast<ForLoop*>(&s)) {
         os << "para " << n->var << " <- ";
-        print_expr(os, *n->start);
+        print_expr_source(os, *n->start);
         os << " hasta ";
-        print_expr(os, *n->end);
+        print_expr_source(os, *n->end);
+        os << "\n";
+        print_block(os, n->body, indent + 1);
+        print_indent(os, indent);
+        os << "fin para\n";
+        return;
+    }
+    if (auto* n = dynamic_cast<ForEach*>(&s)) {
+        os << "para cada " << n->var << " en ";
+        print_expr_source(os, *n->collection);
         os << "\n";
         print_block(os, n->body, indent + 1);
         print_indent(os, indent);
@@ -184,7 +117,7 @@ void print_stmt(std::ostream& os, nemi::Stmt& s, int indent) {
     }
     if (auto* n = dynamic_cast<WhileLoop*>(&s)) {
         os << "mientras ";
-        print_expr(os, *n->condition);
+        print_expr_source(os, *n->condition);
         os << "\n";
         print_block(os, n->body, indent + 1);
         print_indent(os, indent);
@@ -193,7 +126,7 @@ void print_stmt(std::ostream& os, nemi::Stmt& s, int indent) {
     }
     if (auto* n = dynamic_cast<If*>(&s)) {
         os << "si ";
-        print_expr(os, *n->condition);
+        print_expr_source(os, *n->condition);
         os << "\n";
         print_block(os, n->then_body, indent + 1);
         if (n->has_else) {
@@ -209,18 +142,31 @@ void print_stmt(std::ostream& os, nemi::Stmt& s, int indent) {
         os << "regresa";
         if (n->value) {
             os << " ";
-            print_expr(os, *n->value);
+            print_expr_source(os, *n->value);
         }
         os << "\n";
         return;
     }
     if (auto* n = dynamic_cast<ExprStatement*>(&s)) {
-        print_expr(os, *n->call);
+        print_expr_source(os, *n->call);
         os << "\n";
         return;
     }
     if (auto* n = dynamic_cast<Prose*>(&s)) {
         os << "\xC2\xAB " << n->text << " \xC2\xBB\n";  // « … »
+        return;
+    }
+    if (auto* n = dynamic_cast<Assert*>(&s)) {
+        os << "afirma ";
+        print_expr_source(os, *n->condition);
+        if (n->message) os << ", \"" << *n->message << "\"";
+        os << "\n";
+        return;
+    }
+    if (auto* n = dynamic_cast<Trace*>(&s)) {
+        os << "traza ";
+        print_expr_source(os, *n->expression);
+        os << "\n";
         return;
     }
     os << "?stmt?\n";
@@ -244,6 +190,7 @@ int main(int argc, char** argv) {
 
     std::vector<std::string> files;
     std::vector<std::string> calls;
+    std::vector<std::string> include_dirs;
     bool dump_lexemes = false;
     bool dump_asa = false;
 
@@ -256,6 +203,9 @@ int main(int argc, char** argv) {
             dump_lexemes = true;
         } else if (arg == "--asa") {
             dump_asa = true;
+        } else if (arg == "-I" || arg == "--incluye-dir") {
+            if (++i >= argc) return usage();
+            include_dirs.emplace_back(argv[i]);
         } else if (arg == "-a" || arg == "--ayuda") {
             print_help();
             return 0;
@@ -269,7 +219,8 @@ int main(int argc, char** argv) {
     try {
         if (dump_lexemes) {
             for (const auto& path : files) {
-                for (const auto& tok : nemi::tokenize_file_with_includes(path)) {
+                for (const auto& tok :
+                     nemi::tokenize_file_with_includes(path, include_dirs)) {
                     std::cout << nemi::to_string(tok.kind) << '\n';
                 }
             }
@@ -278,14 +229,15 @@ int main(int argc, char** argv) {
 
         if (dump_asa) {
             for (const auto& path : files) {
-                nemi::Parser parser(nemi::tokenize_file_with_includes(path));
+                nemi::Parser parser(
+                    nemi::tokenize_file_with_includes(path, include_dirs));
                 nemi::Program program = parser.parse_program();
                 for (auto& def : program.definitions) print_definition(std::cout, *def);
             }
             return 0;
         }
 
-        nemi::Interpreter interp = nemi::load_files(files);
+        nemi::Interpreter interp = nemi::load_files(files, include_dirs);
         interp.run_program();  // execute any top-level statements (the script body)
         for (const auto& call : calls) {
             nemi::Value result = nemi::run_call(interp, call);

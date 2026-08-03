@@ -6,27 +6,52 @@
 // (not FAIL), so this file doubles as a live TODO list. A C++ port is complete
 // when every case reads PASS.
 //
-// NEMI_EXAMPLES_DIR is injected by CMake (points at ../examples).
+// NEMI_EXAMPLES_DIR and NEMI_BIBCOM_DIR are injected by CMake (point at
+// ../examples and ../bibcom respectively).
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "nemi/array.hpp"
 #include "nemi/ast.hpp"
+#include "nemi/conjunto.hpp"
 #include "nemi/errors.hpp"
 #include "nemi/nemi.hpp"
 
 #ifndef NEMI_EXAMPLES_DIR
 #  define NEMI_EXAMPLES_DIR "."
 #endif
+#ifndef NEMI_BIBCOM_DIR
+#  define NEMI_BIBCOM_DIR "."
+#endif
 
 namespace {
 
 std::string example(const std::string& name) {
     return std::string(NEMI_EXAMPLES_DIR) + "/" + name;
+}
+
+std::string bibcom(const std::string& name) {
+    return std::string(NEMI_BIBCOM_DIR) + "/" + name;
+}
+
+// Runs `fn` with std::cout redirected into a buffer, returns what it wrote.
+// Used by the traza (v0.2 §21.3) checks, which assert on printed trace lines.
+std::string capture_stdout(const std::function<void()>& fn) {
+    std::ostringstream buf;
+    std::streambuf* saved = std::cout.rdbuf(buf.rdbuf());
+    try {
+        fn();
+    } catch (...) {
+        std::cout.rdbuf(saved);
+        throw;
+    }
+    std::cout.rdbuf(saved);
+    return buf.str();
 }
 
 // All corpus files, loaded into one interpreter (definitions share a program).
@@ -191,6 +216,499 @@ int main() {
             nemi::load("incluye \"biblioteca_rota.nemi\"\n",
                       example("marcador_ficticio2.nemi"));
         }, "biblioteca_rota.nemi");
+
+        // -I / search_paths: fallback search path when the file isn't next
+        // to the one including it (see README.md, "-I / --incluye-dir")
+        std::vector<std::string> incluye_dir_externo{example("incluye_dir_externo")};
+        nemi::Interpreter via_dir = nemi::load_files(
+            {example("usa_incluye_dir.nemi")}, incluye_dir_externo);
+        api_check("triple(7) via -I", [&] {
+            return via_dir.call("triple", {nemi::Integer{7}});
+        }, "21");
+
+        expect_error("incluye not found without matching -I", [&] {
+            nemi::load_files({example("usa_incluye_dir.nemi")});
+        }, "triple.nemi");
+    }
+
+    // -- Conjunto (v0.2 §20.1-§20.2) ---------------------------------------
+    {
+        nemi::Interpreter cset = nemi::load(
+            "función literal_con_dup() regresa {3, 1, 2, 1} fin función\n"
+            "función pertenece_si() regresa 2 \xE2\x88\x88 {1, 2, 3} fin función\n"
+            "función pertenece_igual_uno() regresa (2 \xE2\x88\x88 {1, 2, 3}) = 1 fin función\n"
+            "función pertenece_no() regresa 5 \xE2\x88\x88 {1, 2, 3} fin función\n"
+            "función pertenece_si_en() regresa 2 en {1, 2, 3} fin función\n"
+            "función pertenece_no_en() regresa 5 en {1, 2, 3} fin función\n"
+            "función no_pertenece() regresa 5 \xE2\x88\x89 {1, 2, 3} fin función\n"
+            "función vacio_literal() regresa \xE2\x88\x85 fin función\n"
+            "función es_subconjunto() regresa {1, 2} \xE2\x8A\x86 {1, 2, 3} fin función\n"
+            "función no_propio_de_si() regresa {1, 2, 3} \xE2\x8A\x82 {1, 2, 3} fin función\n"
+            "función igualdad_sin_orden() regresa {1, 2, 3} = {3, 2, 1} fin función\n"
+            "función anidado() regresa {1, 2} \xE2\x88\x88 {{1, 2}, {3, 4}} fin función\n"
+            "función u() regresa union({1,2}, {2,3}) fin función\n"
+            "función i() regresa interseccion({1,2,3}, {2,3,4}) fin función\n"
+            "función d() regresa diferencia({1,2,3}, {2}) fin función\n"
+            "función c() regresa cardinalidad({1,2,3}) fin función\n"
+            "función p() regresa pertenece(2, {1,2,3}) fin función\n"
+            "función s() regresa subconjunto({1,2}, {1,2,3}) fin función\n"
+            "función l() regresa long({1,2,3}) fin función\n"
+            "función sinvalor()\n"
+            "    regresa\n"
+            "fin función\n");
+
+        auto ccall = [&](const std::string& name) {
+            return [&cset, name] { return cset.call(name, {}); };
+        };
+        h.check("{3,1,2,1} collapses to {1,2,3}", ccall("literal_con_dup"), "{1, 2, 3}");
+        h.check("2 \xE2\x88\x88 {1,2,3}", ccall("pertenece_si"), "verdadero");
+        // regression (found by bibcom/conjuntos.nemi, v0.2 §22.3): `=` must
+        // treat a bit-producing bool as equal to the number 1, mirroring
+        // Python's bool-is-an-int semantics (values_equal in value.cpp).
+        h.check("(2 \xE2\x88\x88 {1,2,3}) = 1", ccall("pertenece_igual_uno"), "verdadero");
+        h.check("5 \xE2\x88\x88 {1,2,3} is false", ccall("pertenece_no"), "falso");
+        h.check("2 en {1,2,3} (ASCII word for \xE2\x88\x88)", ccall("pertenece_si_en"), "verdadero");
+        h.check("5 en {1,2,3} is false", ccall("pertenece_no_en"), "falso");
+        h.check("5 \xE2\x88\x89 {1,2,3}", ccall("no_pertenece"), "verdadero");
+        h.check("\xE2\x88\x85 literal is an empty conjunto", ccall("vacio_literal"), "{}");
+        h.check("{1,2} \xE2\x8A\x86 {1,2,3}", ccall("es_subconjunto"), "verdadero");
+        h.check("{1,2,3} \xE2\x8A\x82 {1,2,3} is false (not proper)",
+                ccall("no_propio_de_si"), "falso");
+        h.check("conjunto equality ignores insertion order", ccall("igualdad_sin_orden"), "verdadero");
+        h.check("nested conjunto membership", ccall("anidado"), "verdadero");
+        h.check("union({1,2},{2,3})", ccall("u"), "{1, 2, 3}");
+        h.check("interseccion({1,2,3},{2,3,4})", ccall("i"), "{2, 3}");
+        h.check("diferencia({1,2,3},{2})", ccall("d"), "{1, 3}");
+        h.check("cardinalidad({1,2,3})", ccall("c"), "3");
+        h.check("pertenece(2, {1,2,3})", ccall("p"), "verdadero");
+        h.check("subconjunto({1,2}, {1,2,3})", ccall("s"), "verdadero");
+        h.check("long extended to conjunto", ccall("l"), "3");
+        // ∅ keeps its two meanings straight (§20.1): a procedure/regresa
+        // with no value formats as ∅, distinct from the empty-set literal
+        // (checked above -- "{}" via vacio_literal), never confused.
+        h.check("no-value result formats as \xE2\x88\x85", ccall("sinvalor"), "\xE2\x88\x85");
+    }
+
+    // -- para cada ... en ... (v0.2 §20.3) ---------------------------------
+    {
+        nemi::Interpreter feach = nemi::load(
+            "función suma_lista(s)\n"
+            "    total <- 0\n"
+            "    para cada elem en s repite\n"
+            "        total <- total + elem\n"
+            "    fin para\n"
+            "    regresa total\n"
+            "fin función\n"
+            "función suma_conjunto(c)\n"
+            "    total <- 0\n"
+            "    para cada elem en c repite\n"
+            "        total <- total + elem\n"
+            "    fin para\n"
+            "    regresa total\n"
+            "fin función\n"
+            // Encodes visitation order as a single number (elem 3, then 1,
+            // then 2 -> 312) since `agrega` (Fase 3) isn't implemented yet
+            // to collect a real list of what was seen.
+            "función orden_lista()\n"
+            "    v <- 0\n"
+            "    para cada elem en [3, 1, 2] repite\n"
+            "        v <- v * 10 + elem\n"
+            "    fin para\n"
+            "    regresa v\n"
+            "fin función\n"
+            "función orden_conjunto()\n"
+            "    v <- 0\n"
+            "    para cada elem en {3, 1, 2} repite\n"
+            "        v <- v * 10 + elem\n"
+            "    fin para\n"
+            "    regresa v\n"
+            "fin función\n");
+
+        api_check("para cada over a list sums all elements", [&] {
+            auto arr = std::make_shared<nemi::Array>(std::vector<nemi::Value>{
+                nemi::Integer{1}, nemi::Integer{2}, nemi::Integer{3}, nemi::Integer{4}});
+            return feach.call("suma_lista", {arr});
+        }, "10");
+        api_check("para cada over a conjunto sums all elements", [&] {
+            auto set = std::make_shared<nemi::Conjunto>(std::vector<nemi::Value>{
+                nemi::Integer{1}, nemi::Integer{2}, nemi::Integer{3}, nemi::Integer{4}});
+            return feach.call("suma_conjunto", {set});
+        }, "10");
+        h.check("para cada over a list visits in index order",
+                [&] { return feach.call("orden_lista", {}); }, "312");
+        h.check("para cada over a conjunto visits in canonical order",
+                [&] { return feach.call("orden_conjunto", {}); }, "123");
+
+        expect_error("para cada over a non-collection raises", [&] {
+            nemi::load(
+                "función f()\n"
+                "    para cada elem en 5 repite\n"
+                "        z <- elem\n"
+                "    fin para\n"
+                "fin función\n")
+                .call("f", {});
+        }, "para cada");
+    }
+
+    // -- listas dinámicas: agrega/copia/arreglo_cero/matriz_cero (v0.2 §20.4) --
+    {
+        nemi::Interpreter dyn = nemi::load(
+            "función agrega_lista(s, x)\n"
+            "    agrega(s, x)\n"
+            "    regresa s\n"
+            "fin función\n"
+            "función agrega_conjunto(c, x)\n"
+            "    agrega(c, x)\n"
+            "    regresa c\n"
+            "fin función\n"
+            "función copia_independiente()\n"
+            "    original <- [1, 2, 3]\n"
+            "    copiado <- copia(original)\n"
+            "    copiado[1] <- 99\n"
+            "    regresa original\n"
+            "fin función\n"
+            "función copia_profunda()\n"
+            "    interno <- [1, 2]\n"
+            "    original <- [interno]\n"
+            "    copiado <- copia(original)\n"
+            "    copiado[1][1] <- 99\n"
+            "    regresa original\n"
+            "fin función\n"
+            "función arreglo_cero_prueba(n)\n"
+            "    regresa arreglo_cero(n)\n"
+            "fin función\n"
+            "función matriz_cero_prueba(m, n)\n"
+            "    regresa matriz_cero(m, n)\n"
+            "fin función\n");
+
+        api_check("agrega grows a list, mutating by reference", [&] {
+            auto arr = std::make_shared<nemi::Array>(std::vector<nemi::Value>{
+                nemi::Integer{1}, nemi::Integer{2}});
+            return dyn.call("agrega_lista", {arr, nemi::Integer{3}});
+        }, "[1, 2, 3]");
+        api_check("agrega on a conjunto is idempotent", [&] {
+            auto set = std::make_shared<nemi::Conjunto>(std::vector<nemi::Value>{
+                nemi::Integer{1}, nemi::Integer{2}});
+            return dyn.call("agrega_conjunto", {set, nemi::Integer{2}});
+        }, "{1, 2}");
+        h.check("copia leaves the original untouched",
+                [&] { return dyn.call("copia_independiente", {}); }, "[1, 2, 3]");
+        h.check("copia is deep (nested Array untouched too)",
+                [&] { return dyn.call("copia_profunda", {}); }, "[[1, 2]]");
+        h.check("arreglo_cero(5)",
+                [&] { return dyn.call("arreglo_cero_prueba", {nemi::Integer{5}}); },
+                "[0, 0, 0, 0, 0]");
+        h.check("matriz_cero(2,3)",
+                [&] { return dyn.call("matriz_cero_prueba", {nemi::Integer{2}, nemi::Integer{3}}); },
+                "[[0, 0, 0], [0, 0, 0]]");
+
+        expect_error("agrega on a scalar raises", [&] {
+            dyn.call("agrega_lista", {nemi::Integer{5}, nemi::Integer{1}});
+        }, "agrega");
+        expect_error("arreglo_cero(-1) raises", [&] {
+            dyn.call("arreglo_cero_prueba", {nemi::Integer{-1}});
+        }, "arreglo_cero");
+    }
+
+    // -- afirma (v0.2 §21.2) ------------------------------------------------
+    {
+        nemi::Interpreter assert_interp = nemi::load(
+            "función C(n, r)\n"
+            "    resultado <- 1\n"
+            "    para i <- 1 hasta r\n"
+            "        resultado <- (resultado * (n - r + i)) / i\n"
+            "    fin para\n"
+            "    regresa resultado\n"
+            "fin función\n"
+            "función prueba_ok()\n"
+            "    afirma C(8, 4) = 70\n"
+            "    regresa 1\n"
+            "fin función\n"
+            "función prueba_falsa_sin_mensaje()\n"
+            "    afirma 1 = 2\n"
+            "fin función\n"
+            "función prueba_falsa_con_mensaje()\n"
+            "    afirma 1 = 2, \"mensaje de prueba\"\n"
+            "fin función\n"
+            "función prueba_listas()\n"
+            "    afirma [1, 2, 3] = [1, 2, 4]\n"
+            "fin función\n");
+
+        h.check("afirma true does nothing",
+                [&] { return assert_interp.call("prueba_ok", {}); }, "1");
+
+        expect_error("afirma false without message raises", [&] {
+            assert_interp.call("prueba_falsa_sin_mensaje", {});
+        }, "afirma");
+
+        expect_error("afirma false message is included in the error", [&] {
+            assert_interp.call("prueba_falsa_con_mensaje", {});
+        }, "mensaje de prueba");
+
+        expect_error("afirma error quotes the failing expression", [&] {
+            assert_interp.call("prueba_falsa_con_mensaje", {});
+        }, "1 = 2");
+
+        expect_error("afirma with structural list equality raises when unequal", [&] {
+            assert_interp.call("prueba_listas", {});
+        }, "afirma");
+
+        expect_error("afirma error normalizes 'en' back to \xE2\x88\x88 in the message", [&] {
+            nemi::load("afirma 5 en {1, 2, 3}\n").run_program();
+        }, "5 \xE2\x88\x88 {1, 2, 3}");
+
+        // afirma at the top-level script body (not inside a función)
+        try {
+            nemi::load("función doble(x)\n    regresa x * 2\nfin funci\xC3\xB3n\nafirma doble(21) = 42\n")
+                .run_program();
+            std::cout << "  [PASS] afirma at top level (true) doesn't abort\n";
+            ++h.passed;
+        } catch (const nemi::NemiError& err) {
+            std::cout << "  [FAIL] afirma at top level (true) doesn't abort: threw "
+                      << err.what() << "\n";
+            ++h.failed;
+        }
+
+        expect_error("afirma at top level (false) aborts the script", [&] {
+            nemi::load("afirma 1 = 2\n").run_program();
+        }, "afirma");
+
+        // error location must point at the file with the failing afirma, even
+        // when reached via incluye (spec §12/§21.2)
+        expect_error("afirma error via incluye names the right file", [&] {
+            nemi::load("incluye \"prueba_afirma.nemi\"\n",
+                      example("marcador_ficticio3.nemi"))
+                .run_program();
+        }, "prueba_afirma.nemi");
+    }
+
+    // -- traza (v0.2 §21.3 [OPC]) --------------------------------------------
+    {
+        auto check_text = [&](const std::string& label, const std::string& got,
+                              const std::string& expected) {
+            if (got == expected) {
+                std::cout << "  [PASS] " << label << "\n";
+                ++h.passed;
+            } else {
+                std::cout << "  [FAIL] " << label << ": got " << got
+                          << ", expected " << expected << "\n";
+                ++h.failed;
+            }
+        };
+
+        check_text(
+            "traza prints nested entry/return, indented by call depth",
+            capture_stdout([] {
+                nemi::load(
+                    "funci\xC3\xB3n factorial(n)\n"
+                    "    si n = 0\n"
+                    "        regresa 1\n"
+                    "    fin si\n"
+                    "    regresa n * factorial(n - 1)\n"
+                    "fin funci\xC3\xB3n\n"
+                    "traza factorial(3)\n")
+                    .run_program();
+            }),
+            "\xE2\x86\x92 factorial(3)\n"
+            "  \xE2\x86\x92 factorial(2)\n"
+            "    \xE2\x86\x92 factorial(1)\n"
+            "      \xE2\x86\x92 factorial(0)\n"
+            "      \xE2\x86\x90 1\n"
+            "    \xE2\x86\x90 1\n"
+            "  \xE2\x86\x90 2\n"
+            "\xE2\x86\x90 6\n");
+
+        check_text(
+            "traza prints each assignment, indented one level past entry/return",
+            capture_stdout([] {
+                nemi::load(
+                    "funci\xC3\xB3n mcd(a, b)\n"
+                    "    mientras b != 0\n"
+                    "        t <- b\n"
+                    "        b <- a mod b\n"
+                    "        a <- t\n"
+                    "    fin mientras\n"
+                    "    regresa a\n"
+                    "fin funci\xC3\xB3n\n"
+                    "traza mcd(12, 18)\n")
+                    .run_program();
+            }),
+            "\xE2\x86\x92 mcd(12, 18)\n"
+            "    t \xE2\x86\x90 18\n"
+            "    b \xE2\x86\x90 12\n"
+            "    a \xE2\x86\x90 18\n"
+            "    t \xE2\x86\x90 12\n"
+            "    b \xE2\x86\x90 6\n"
+            "    a \xE2\x86\x90 12\n"
+            "    t \xE2\x86\x90 6\n"
+            "    b \xE2\x86\x90 0\n"
+            "    a \xE2\x86\x90 6\n"
+            "\xE2\x86\x90 6\n");
+
+        check_text(
+            "traza of a non-call expression prints nothing (no call/assign happens)",
+            capture_stdout([] { nemi::load("traza 2 + 2\n").run_program(); }),
+            "");
+
+        check_text(
+            "nested traza (already active) doesn't disturb the outer trace: both "
+            "the inner `traza f(n)` and the untraced `f(n)` after it get traced, "
+            "since the outer traza's dynamic extent is still active for both",
+            capture_stdout([] {
+                nemi::load(
+                    "funci\xC3\xB3n f(n)\n"
+                    "    regresa n + 1\n"
+                    "fin funci\xC3\xB3n\n"
+                    "funci\xC3\xB3n g(n)\n"
+                    "    traza f(n)\n"
+                    "    regresa f(n) * 2\n"
+                    "fin funci\xC3\xB3n\n"
+                    "traza g(5)\n")
+                    .run_program();
+            }),
+            "\xE2\x86\x92 g(5)\n"
+            "  \xE2\x86\x92 f(5)\n"
+            "  \xE2\x86\x90 6\n"
+            "  \xE2\x86\x92 f(5)\n"
+            "  \xE2\x86\x90 6\n"
+            "\xE2\x86\x90 12\n");
+
+        check_text(
+            "traza prints entry but no return line when the call aborts",
+            capture_stdout([] {
+                try {
+                    nemi::load(
+                        "funci\xC3\xB3n falla(n)\n"
+                        "    afirma n > 10\n"
+                        "    regresa n\n"
+                        "fin funci\xC3\xB3n\n"
+                        "traza falla(3)\n")
+                        .run_program();
+                } catch (const nemi::NemiError&) {
+                    // expected: the assert aborts the traced call
+                }
+            }),
+            "\xE2\x86\x92 falla(3)\n");
+    }
+
+    // -- primitivas de cadena (v0.2 §22.6) -----------------------------------
+    {
+        nemi::Interpreter strings_interp = nemi::load("");  // primitives only
+
+        h.check("concatena/texto/valor",
+                [&] { return nemi::run_call(strings_interp, "concatena(\"ab\", \"cd\")"); },
+                "\"abcd\"");
+        h.check("texto(5)", [&] { return nemi::run_call(strings_interp, "texto(5)"); },
+                "\"5\"");
+        h.check("texto of a Rational renders as p/q (same as format_value)",
+                [&] { return nemi::run_call(strings_interp, "texto(3 / 2)"); }, "\"3/2\"");
+        h.check("texto of a whole-number Rational drops the /1",
+                [&] { return nemi::run_call(strings_interp, "texto(4 / 2)"); }, "\"2\"");
+        h.check("valor('7')", [&] { return nemi::run_call(strings_interp, "valor(\"7\")"); },
+                "7");
+
+        expect_error("concatena raises on a non-string argument", [&] {
+            nemi::run_call(strings_interp, "concatena(\"a\", 1)");
+        }, "concatena");
+        expect_error("texto raises on a non-number argument", [&] {
+            nemi::run_call(strings_interp, "texto(\"5\")");
+        }, "texto");
+        expect_error("valor raises on a non-digit character", [&] {
+            nemi::run_call(strings_interp, "valor(\"x\")");
+        }, "valor");
+        expect_error("valor raises on a multi-character string", [&] {
+            nemi::run_call(strings_interp, "valor(\"12\")");
+        }, "valor");
+
+        // the §22.6 module code itself, verbatim, as its own acceptance suite:
+        // if any of its `afirma` lines is false, run_program() throws.
+        try {
+            nemi::load(
+                "funci\xC3\xB3n invierte(s)\n"
+                "    r <- \"\"\n"
+                "    para i <- 1 hasta long(s)\n"
+                "        r <- concatena(r, s[long(s) - i + 1])\n"
+                "    fin para\n"
+                "    regresa r\n"
+                "fin funci\xC3\xB3n\n"
+                "funci\xC3\xB3n prefijo(s, k)\n"
+                "    r <- \"\"\n"
+                "    para i <- 1 hasta k\n"
+                "        r <- concatena(r, s[i])\n"
+                "    fin para\n"
+                "    regresa r\n"
+                "fin funci\xC3\xB3n\n"
+                "funci\xC3\xB3n sufijo(s, k)\n"
+                "    r <- \"\"\n"
+                "    para i <- long(s) - k + 1 hasta long(s)\n"
+                "        r <- concatena(r, s[i])\n"
+                "    fin para\n"
+                "    regresa r\n"
+                "fin funci\xC3\xB3n\n"
+                "funci\xC3\xB3n a_binario(n)\n"
+                "    si n = 0\n"
+                "        regresa \"0\"\n"
+                "    fin si\n"
+                "    r <- \"\"\n"
+                "    mientras n > 0\n"
+                "        r <- concatena(texto(n mod 2), r)\n"
+                "        n <- \xE2\x8C\x8A n / 2 \xE2\x8C\x8B\n"
+                "    fin mientras\n"
+                "    regresa r\n"
+                "fin funci\xC3\xB3n\n"
+                "funci\xC3\xB3n desde_base(s, b)\n"
+                "    v <- 0\n"
+                "    para i <- 1 hasta long(s)\n"
+                "        v <- v * b + valor(s[i])\n"
+                "    fin para\n"
+                "    regresa v\n"
+                "fin funci\xC3\xB3n\n"
+                "afirma invierte(\"abc\") = \"cba\"\n"
+                "afirma prefijo(\"discreta\", 4) = \"disc\"\n"
+                "afirma sufijo(\"discreta\", 3) = \"eta\"\n"
+                "afirma a_binario(13) = \"1101\"\n"
+                "afirma desde_base(\"1101\", 2) = 13\n")
+                .run_program();
+            std::cout << "  [PASS] cadenas.nemi (\xC2\xA7" "22.6) module runs with all afirma true\n";
+            ++h.passed;
+        } catch (const nemi::NemiError& err) {
+            std::cout << "  [FAIL] cadenas.nemi (\xC2\xA7" "22.6) module runs with all afirma true: "
+                      << err.what() << "\n";
+            ++h.failed;
+        }
+    }
+
+    // -- bibcom/*.nemi (v0.2 §19.3, §22) -------------------------------------
+    // The actual library files (not inline copies): loading each one and
+    // running it is the acceptance suite the spec describes -- if any of its
+    // `afirma` lines were wrong, run_program() would throw.
+    {
+        static const char* modules[] = {
+            "teoria_numeros", "conteo", "conjuntos", "relaciones", "booleana", "cadenas",
+        };
+        for (const char* module : modules) {
+            std::string label = std::string("bibcom/") + module +
+                                 ".nemi runs standalone with all afirma true";
+            try {
+                nemi::load_files({bibcom(std::string(module) + ".nemi")}).run_program();
+                std::cout << "  [PASS] " << label << "\n";
+                ++h.passed;
+            } catch (const nemi::NemiError& err) {
+                std::cout << "  [FAIL] " << label << ": " << err.what() << "\n";
+                ++h.failed;
+            }
+        }
+
+        try {
+            nemi::load_files({bibcom("bibcom.nemi")}).run_program();
+            std::cout << "  [PASS] bibcom.nemi aggregator (incluye of all six) "
+                         "runs with no afirma failing\n";
+            ++h.passed;
+        } catch (const nemi::NemiError& err) {
+            std::cout << "  [FAIL] bibcom.nemi aggregator (incluye of all six) "
+                         "runs with no afirma failing: " << err.what() << "\n";
+            ++h.failed;
+        }
     }
 
     std::cout << "\n" << h.passed << " passed, " << h.failed << " failed, "
