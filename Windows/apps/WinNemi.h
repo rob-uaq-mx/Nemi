@@ -40,7 +40,22 @@
 // New: the "Ejecutar" menu, added for WinNemi.
 #define IDM_RUN          60
 
+// New: opens the "Rutas de inclusión" dialog (WinNemiIncludeDlg.cpp).
+#define IDM_INCLUDE_PATHS 65
+
+// New: one command ID per button of the symbol toolbar (WinNemiSymbols.cpp),
+// sequential from IDM_SYM_FIRST -- WndProc's WM_COMMAND handler recognizes
+// the whole range with a single bounds check instead of one case per symbol
+// (see WinNemiSymbolsTable/WinNemiSymbolsCount in WinNemiSymbols.h).
+#define IDM_SYM_FIRST    70
+
 #define IDD_FNAME        10
+
+// New: control IDs for the "Rutas de inclusión" dialog (WinNemi.rc's
+// IncludesDlg + WinNemiIncludeDlg.cpp).
+#define IDD_INCLUDES_LIST    100
+#define IDD_INCLUDES_ADD     101
+#define IDD_INCLUDES_REMOVE  102
 
 // ----- UTF-8 <-> UTF-16 conversion (the boundary; Win32 speaks UTF-16, the
 // Nemi interpreter and .nemi files speak UTF-8) ------------------------------
@@ -90,5 +105,9 @@ void WinNemiFontDeinitialize(void);
 
 // ----- Functions in WinNemiPrint.cpp -----------------------------------------
 BOOL WinNemiPrintFile(HINSTANCE hInst, HWND hwnd, HWND hwndEdit, const std::wstring &titleName);
+
+// (WinNemiState.cpp and WinNemiIncludeDlg.cpp declare their own functions in
+// WinNemiState.h / WinNemiIncludeDlg.h -- WinNemi.cpp includes those headers
+// directly, same as WinNemiSymbols.h.)
 
 #endif  // WINNEMI_H

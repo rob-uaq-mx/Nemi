@@ -12,6 +12,13 @@
 
 WinNemi ICON "WinNemi.ico"
 
+// Tira de 9 íconos de 16x16 (4bpp, 16 colores) para la barra de herramientas
+// estándar -- generada por devtools/ascii_to_bmp.py a partir de
+// devtools/art/toolbar_std.art.txt (ver devtools/README.md por el orden de
+// los íconos). La barra de símbolos no usa bitmap: se dibuja en tiempo de
+// ejecución (WinNemiSymbols.cpp).
+WinNemiToolbarStd BITMAP "toolbar_std.bmp"
+
 WinNemi MENU
      {
      POPUP "&Archivo"
@@ -49,6 +56,8 @@ WinNemi MENU
      POPUP "&Ejecutar"
           {
           MENUITEM "&Ejecutar archivo\tF5",   IDM_RUN
+          MENUITEM SEPARATOR
+          MENUITEM "&Rutas de inclusión...",  IDM_INCLUDE_PATHS
           }
      POPUP "Ay&uda"
           {
@@ -85,7 +94,7 @@ AboutBox DIALOG  20, 20, 160, 90
      CTEXT "WinNemi",                                  -1,   0, 12, 160,  8
      ICON  "WinNemi",                                  -1,   8,  8,   0,  0
      CTEXT "Editor y consola para archivos Nemi",      -1,   0, 30, 160,  8
-     CTEXT "Basado en PopPad, de Charles Petzold (1996)", -1, 0, 42, 160,  8
+     CTEXT "Licenciatura en Matemáticas Aplicadas", -1, 0, 42, 160,  8
      DEFPUSHBUTTON "Aceptar",                        IDOK,  64, 68,  32, 14, WS_GROUP
      }
 
@@ -97,4 +106,21 @@ PrintDlgBox DIALOG 20, 20, 100, 76
      CTEXT "",                       IDD_FNAME,  0, 20, 100,  8
      CTEXT "a la cola de impresión.",        -1,  0, 30, 100,  8
      DEFPUSHBUTTON  "Cancelar",       IDCANCEL, 34, 50,  32, 14, WS_GROUP
+     }
+
+// Rutas extra donde buscar "incluye" cuando el archivo no está junto al que
+// lo incluye (ver WinNemiState.h/WinNemiIncludeDlg.cpp). La carpeta bibcom/
+// junto al .exe se busca aparte, sin necesidad de estar en esta lista.
+IncludesDlg DIALOG 20, 20, 220, 150
+     STYLE WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME
+     CAPTION "Rutas de inclusión"
+     FONT 8, "MS Shell Dlg"
+     {
+     LTEXT   "Carpetas adicionales donde buscar los archivos de ""incluye"" (después de la carpeta del propio archivo):",
+                                              -1,       8,   8, 204, 24
+     LISTBOX IDD_INCLUDES_LIST,               8,  34, 204,  70, LBS_NOTIFY | WS_VSCROLL | WS_BORDER | WS_TABSTOP
+     PUSHBUTTON "&Agregar carpeta...",        IDD_INCLUDES_ADD,    8, 108,  90, 14
+     PUSHBUTTON "&Quitar",                    IDD_INCLUDES_REMOVE, 102, 108, 50, 14
+     DEFPUSHBUTTON "Aceptar",                 IDOK,     100, 128,  50, 14, WS_GROUP
+     PUSHBUTTON "Cancelar",                   IDCANCEL, 156, 128,  56, 14
      }

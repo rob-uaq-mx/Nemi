@@ -7,3 +7,10 @@ cmake-build-*/
 *.lib
 *.a
 compile_commands.json
+
+# Inno Setup installer output
+installer/output/
+
+# WinNemi's own runtime state (window size/position/maximized) -- generated
+# next to the .exe on first close, not something to version.
+apps/WinNemi.ini

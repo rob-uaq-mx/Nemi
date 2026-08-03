@@ -6,6 +6,15 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# --- static MSVC runtime -----------------------------------------------------
+# Links the C/C++ runtime into the binaries themselves (/MT, /MTd) instead of
+# depending on it being present as a DLL (/MD, /MDd) -- so WinNemi.exe runs on
+# a machine with no Visual C++ Redistributable installed, which matters for a
+# standalone installer. Only affects MSVC; other compilers are unaffected.
+if(MSVC)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE Debug CACHE STRING "" FORCE)
 endif()
@@ -19,6 +28,8 @@ add_library(nemi
   src/bigint.cpp
   src/rational.cpp
   src/value.cpp
+  src/conjunto.cpp
+  src/pretty.cpp
   src/lexer.cpp
   src/parser.cpp
   src/interpreter.cpp
@@ -58,9 +69,15 @@ if(WIN32)
     apps/WinNemiFind.cpp
     apps/WinNemiFont.cpp
     apps/WinNemiPrint.cpp
+    apps/WinNemiSymbols.cpp
+    apps/WinNemiState.cpp
+    apps/WinNemiIncludeDlg.cpp
     apps/WinNemi.rc
   )
-  target_link_libraries(WinNemi PRIVATE nemi cmdlinectl user32 gdi32 comdlg32)
+  # comctl32: the Toolbar common control (standard + symbol toolbars).
+  # shell32/ole32: SHBrowseForFolderW + SHGetPathFromIDListW/CoTaskMemFree,
+  # for the "Rutas de inclusión" folder picker (WinNemiIncludeDlg.cpp).
+  target_link_libraries(WinNemi PRIVATE nemi cmdlinectl user32 gdi32 comdlg32 comctl32 shell32 ole32)
   if(MSVC)
     target_compile_options(WinNemi PRIVATE /utf-8 /FS)
   endif()

@@ -11,22 +11,43 @@
 // menú "Ejecutar" que carga el texto del editor en el intérprete de Nemi.
 #include "WinNemi.h"
 #include "CmdLineCtl.h"
+#include "WinNemiSymbols.h"
+#include "WinNemiState.h"
+#include "WinNemiIncludeDlg.h"
 
 #include <nemi/nemi.hpp>
+
+#include <commctrl.h>
+#include <shellapi.h>
 
 #include <iostream>
 #include <memory>
 #include <streambuf>
 #include <string>
+#include <vector>
 
-#define EDITID    1
-#define ID_CMDLN  2
+// Activa Common Controls v6 (visual moderno del control Toolbar, en vez del
+// estilo plano de Windows 95) sin necesitar un archivo .manifest aparte.
+#pragma comment(linker, \
+    "\"/manifestdependency:type='Win32' name='Microsoft.Windows.Common-Controls' " \
+    "version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+
+#define EDITID          1
+#define ID_CMDLN        2
+#define IDC_TOOLBAR_STD 3
+#define IDC_TOOLBAR_SYM 4
 
 // ----- Estado por ventana (vía GWLP_USERDATA) -------------------------------
 struct AppState {
     HINSTANCE hInst = nullptr;
     HWND hwndEdit = nullptr;
     HWND hCmdLine = nullptr;
+    HWND hToolbarStd = nullptr;
+    HWND hToolbarSym = nullptr;
+    int toolbarStdHeight = 0;
+    int toolbarSymHeight = 0;
+    HIMAGELIST himlStd = nullptr;
+    HIMAGELIST himlSym = nullptr;
     HWND hDlgModeless = nullptr;
     UINT iMsgFindReplace = 0;
     bool dirty = false;
@@ -124,10 +145,22 @@ static void RunCurrentBuffer(AppState *state) {
     // unsaved buffer falls back to CWD (nemi::load's default).
     std::string source_path = state->filePath.empty() ? "" : WideToUtf8(state->filePath);
 
+    // If not found next to the file's own directory, 'incluye' also tries:
+    // the student's own configured folders (Ejecutar > Rutas de
+    // inclusión...), then bibcom/ next to WinNemi.exe if it's there -- same
+    // order the -I CLI flag uses (yours wins, bibcom/ is the last resort).
+    std::vector<std::string> search_paths;
+    for (const auto &dir : WinNemiStateLoadIncludeDirs())
+        search_paths.push_back(WideToUtf8(dir));
+    std::wstring bibcom = WinNemiStateImplicitBibcomDir();
+    if (!bibcom.empty())
+        search_paths.push_back(WideToUtf8(bibcom));
+
     CmdLnPrintf(state->hCmdLine, "\r\n--- Ejecutando ---\r\n");
 
     try {
-        auto interp = std::make_unique<nemi::Interpreter>(nemi::load(source, source_path));
+        auto interp = std::make_unique<nemi::Interpreter>(
+            nemi::load(source, source_path, search_paths));
         {
             RedirectCout guard(state->hCmdLine);
             interp->run_program();
@@ -162,10 +195,125 @@ static void OnConsoleLine(HWND hCmdLine, const char *command, void *userdata) {
     }
 }
 
+// ----- Barras de herramientas ------------------------------------------------
+static TBBUTTON MakeToolbarButton(int bitmapIndex, int commandId, const wchar_t *tooltip) {
+    TBBUTTON b = {};
+    b.iBitmap = bitmapIndex;
+    b.idCommand = commandId;
+    b.fsState = TBSTATE_ENABLED;
+    b.fsStyle = BTNS_BUTTON;
+    b.iString = reinterpret_cast<INT_PTR>(tooltip);
+    return b;
+}
+
+static TBBUTTON MakeToolbarSeparator() {
+    TBBUTTON b = {};
+    b.fsStyle = BTNS_SEP;
+    return b;
+}
+
+// Crea la barra estándar (bitmap de devtools/, ver WinNemi.rc) con los 9
+// botones que ya tienen un IDM_* de menú -- así que no hace falta ninguna
+// lógica nueva en WM_COMMAND, el botón manda el mismo mensaje que el menú.
+static HWND CreateStandardToolbar(HWND hwndParent, HINSTANCE hInst, HIMAGELIST *outHiml) {
+    HWND hToolbar = CreateWindowExW(
+        0, L"ToolbarWindow32", NULL,  // TOOLBARCLASSNAME is TEXT()-based (narrow unless
+                                      // UNICODE is defined); this file uses explicit ...W
+                                      // calls throughout instead, so spell it out directly
+        // Ni CCS_NORESIZE (apagaría el auto-tamaño que TB_AUTOSIZE necesita
+        // más abajo para calcular el alto natural, que se cachea en AppState
+        // -- toolbarStdHeight/toolbarSymHeight) ni, sobre todo, sin
+        // CCS_NOPARENTALIGN: sin ese estilo un toolbar se "acopla" solo a la
+        // parte de arriba del cliente del padre en cada resize (su
+        // comportamiento por defecto), ignorando el Y que le pasemos a
+        // MoveWindow -- con dos barras, ambas terminan en Y=0, superpuestas.
+        // Con CCS_NOPARENTALIGN el control respeta la posición/tamaño que le
+        // demos a mano en WM_SIZE, y TB_AUTOSIZE sigue funcionando igual.
+        WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NODIVIDER | CCS_NOPARENTALIGN,
+        0, 0, 0, 0, hwndParent, reinterpret_cast<HMENU>(IDC_TOOLBAR_STD), hInst, NULL);
+
+    HBITMAP hbmp = static_cast<HBITMAP>(
+        LoadImageW(hInst, L"WinNemiToolbarStd", IMAGE_BITMAP, 0, 0, 0));
+    HIMAGELIST himl = ImageList_Create(16, 16, ILC_COLOR4 | ILC_MASK, 9, 0);
+    if (hbmp) {
+        ImageList_AddMasked(himl, hbmp, RGB(255, 255, 255));
+        DeleteObject(hbmp);
+    }
+    SendMessageW(hToolbar, TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(himl));
+    SendMessageW(hToolbar, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
+
+    TBBUTTON buttons[] = {
+        MakeToolbarButton(0, IDM_NEW,   L"Nuevo (Ctrl+N)"),
+        MakeToolbarButton(1, IDM_OPEN,  L"Abrir... (Ctrl+O)"),
+        MakeToolbarButton(2, IDM_SAVE,  L"Guardar (Ctrl+S)"),
+        MakeToolbarSeparator(),
+        MakeToolbarButton(3, IDM_CUT,   L"Cortar (Ctrl+X)"),
+        MakeToolbarButton(4, IDM_COPY,  L"Copiar (Ctrl+C)"),
+        MakeToolbarButton(5, IDM_PASTE, L"Pegar (Ctrl+V)"),
+        MakeToolbarSeparator(),
+        MakeToolbarButton(6, IDM_FIND,  L"Buscar... (Ctrl+F)"),
+        MakeToolbarSeparator(),
+        MakeToolbarButton(7, IDM_FONT,  L"Fuente..."),
+        MakeToolbarSeparator(),
+        MakeToolbarButton(8, IDM_RUN,   L"Ejecutar archivo (F5)"),
+    };
+    SendMessageW(hToolbar, TB_ADDBUTTONSW, sizeof(buttons) / sizeof(buttons[0]),
+                 reinterpret_cast<LPARAM>(buttons));
+    SendMessageW(hToolbar, TB_AUTOSIZE, 0, 0);
+
+    *outHiml = himl;
+    return hToolbar;
+}
+
+// Crea la barra de símbolos: un botón por cada entrada de WinNemiSymbols.h,
+// con la imagen renderizada en tiempo de ejecución (no un bitmap de
+// devtools/ -- ver WinNemiSymbols.cpp).
+static HWND CreateSymbolToolbar(HWND hwndParent, HINSTANCE hInst, HIMAGELIST *outHiml) {
+    HWND hToolbar = CreateWindowExW(
+        0, L"ToolbarWindow32", NULL,  // TOOLBARCLASSNAME is TEXT()-based (narrow unless
+                                      // UNICODE is defined); this file uses explicit ...W
+                                      // calls throughout instead, so spell it out directly
+        // Ver el comentario en CreateStandardToolbar sobre por qué ni
+        // CCS_NORESIZE ni (sobre todo) CCS_NOPARENTALIGN pueden faltar aquí.
+        WS_CHILD | WS_VISIBLE | TBSTYLE_FLAT | TBSTYLE_TOOLTIPS | CCS_NODIVIDER | CCS_NOPARENTALIGN,
+        0, 0, 0, 0, hwndParent, reinterpret_cast<HMENU>(IDC_TOOLBAR_SYM), hInst, NULL);
+
+    HIMAGELIST himl = WinNemiSymbolsBuildImageList(hwndParent);
+    SendMessageW(hToolbar, TB_SETIMAGELIST, 0, reinterpret_cast<LPARAM>(himl));
+    SendMessageW(hToolbar, TB_BUTTONSTRUCTSIZE, sizeof(TBBUTTON), 0);
+
+    int count = WinNemiSymbolsCount();
+    const WinNemiSymbol *symbols = WinNemiSymbolsTable();
+    std::vector<TBBUTTON> buttons(count);
+    for (int i = 0; i < count; ++i)
+        buttons[i] = MakeToolbarButton(i, symbols[i].id, symbols[i].tooltip);
+    SendMessageW(hToolbar, TB_ADDBUTTONSW, count, reinterpret_cast<LPARAM>(buttons.data()));
+    SendMessageW(hToolbar, TB_AUTOSIZE, 0, 0);
+
+    *outHiml = himl;
+    return hToolbar;
+}
+
+// Inserta el texto de un botón de la barra de símbolos en el cursor del
+// editor, dejando el cursor en `caretOffset` (mide en unidades UTF-16
+// dentro de `insert` -- justo después de un glifo suelto, o entre las dos
+// mitades de un par delimitador como ⌊⌋).
+static void InsertSymbol(HWND hwndEdit, const WinNemiSymbol &sym) {
+    DWORD selStart = 0, selEnd = 0;
+    SendMessageW(hwndEdit, EM_GETSEL, reinterpret_cast<WPARAM>(&selStart),
+                reinterpret_cast<LPARAM>(&selEnd));
+    SendMessageW(hwndEdit, EM_REPLACESEL, TRUE, reinterpret_cast<LPARAM>(sym.insert));
+    DWORD caret = selStart + static_cast<DWORD>(sym.caretOffset);
+    SendMessageW(hwndEdit, EM_SETSEL, caret, caret);
+}
+
 // ----- WinMain ---------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     (void)hPrevInstance;
     (void)lpCmdLine;
+
+    INITCOMMONCONTROLSEX icc = { sizeof(icc), ICC_BAR_CLASSES };
+    InitCommonControlsEx(&icc);
 
     WNDCLASSEXW wc = {};
     wc.cbSize        = sizeof(wc);
@@ -196,7 +344,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 0;
     }
 
-    ShowWindow(hwnd, nCmdShow);
+    // Recuerda tamaño/posición/maximizado de la sesión anterior (WinNemi.ini
+    // junto al .exe -- ver WinNemiState.h). Solo se usa cuando nCmdShow es el
+    // caso normal/por-defecto (doble clic en el .exe, o un acceso directo sin
+    // "modo de ventana" forzado); si quien lanzó el proceso pidió
+    // explícitamente minimizado/maximizado, eso tiene prioridad sobre lo
+    // guardado -- mismo criterio que usan la mayoría de las apps bien
+    // portadas.
+    WINDOWPLACEMENT savedPlacement;
+    if (nCmdShow == SW_SHOWNORMAL && WinNemiStateLoad(&savedPlacement)) {
+        SetWindowPlacement(hwnd, &savedPlacement);
+    } else {
+        ShowWindow(hwnd, nCmdShow);
+    }
     UpdateWindow(hwnd);
 
     HACCEL hAccel = LoadAcceleratorsW(hInstance, L"WinNemi");
@@ -228,6 +388,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_CREATE: {
         state->hInst = reinterpret_cast<LPCREATESTRUCTW>(lParam)->hInstance;
+
+        state->hToolbarStd = CreateStandardToolbar(hwnd, state->hInst, &state->himlStd);
+        state->hToolbarSym = CreateSymbolToolbar(hwnd, state->hInst, &state->himlSym);
+        if (!state->hToolbarStd || !state->hToolbarSym) {
+            MessageBoxW(hwnd, L"No se pudieron crear las barras de herramientas.", L"WinNemi",
+                        MB_ICONERROR);
+            return -1;
+        }
+        RECT rcStd, rcSym;
+        GetWindowRect(state->hToolbarStd, &rcStd);
+        GetWindowRect(state->hToolbarSym, &rcSym);
+        state->toolbarStdHeight = rcStd.bottom - rcStd.top;
+        state->toolbarSymHeight = rcSym.bottom - rcSym.top;
 
         state->hwndEdit = CreateWindowExW(
             0, L"EDIT", NULL,
@@ -268,10 +441,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_SIZE: {
         int w = LOWORD(lParam);
         int h = HIWORD(lParam);
-        int editHeight = (h * 65) / 100;  // ~65% editor, ~35% consola
 
-        MoveWindow(state->hwndEdit, 0, 0, w, editHeight, TRUE);
-        MoveWindow(state->hCmdLine, 0, editHeight, w, h - editHeight, TRUE);
+        int y = 0;
+        MoveWindow(state->hToolbarStd, 0, y, w, state->toolbarStdHeight, TRUE);
+        y += state->toolbarStdHeight;
+        MoveWindow(state->hToolbarSym, 0, y, w, state->toolbarSymHeight, TRUE);
+        y += state->toolbarSymHeight;
+
+        int remaining = h - y;
+        int editHeight = (remaining * 65) / 100;  // ~65% editor, ~35% consola (del espacio restante)
+
+        MoveWindow(state->hwndEdit, 0, y, w, editHeight, TRUE);
+        MoveWindow(state->hCmdLine, 0, y + editHeight, w, remaining - editHeight, TRUE);
         return 0;
     }
 
@@ -315,6 +496,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 return 0;
             }
             break;
+        }
+
+        // Botones de la barra de símbolos (WinNemiSymbols.h): un rango
+        // contiguo de IDs, así que un solo chequeo de límites basta en vez
+        // de un `case` por símbolo.
+        if (LOWORD(wParam) >= IDM_SYM_FIRST &&
+            LOWORD(wParam) < IDM_SYM_FIRST + WinNemiSymbolsCount()) {
+            const WinNemiSymbol *symbols = WinNemiSymbolsTable();
+            InsertSymbol(state->hwndEdit, symbols[LOWORD(wParam) - IDM_SYM_FIRST]);
+            SetFocus(state->hwndEdit);
+            return 0;
         }
 
         switch (LOWORD(wParam)) {
@@ -418,9 +610,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             RunCurrentBuffer(state);
             return 0;
 
-        case IDM_HELP:
-            OkMessage(hwnd, L"Ayuda no disponible todavía.", L"");
+        case IDM_INCLUDE_PATHS: {
+            std::vector<std::wstring> dirs = WinNemiStateLoadIncludeDirs();
+            if (WinNemiIncludeDlgShow(state->hInst, hwnd, dirs))
+                WinNemiStateSaveIncludeDirs(dirs);
             return 0;
+        }
+
+        case IDM_HELP: {
+            std::wstring helpPath = WinNemiStateExeDir() + L"manual\\00_indice.html";
+            if (GetFileAttributesW(helpPath.c_str()) == INVALID_FILE_ATTRIBUTES)
+                OkMessage(hwnd, L"No se encontró la carpeta manual\\ junto al programa.", L"");
+            else
+                ShellExecuteW(NULL, L"open", helpPath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+            return 0;
+        }
 
         case IDM_ABOUT:
             DialogBoxW(state->hInst, L"AboutBox", hwnd, AboutDlgProc);
@@ -437,6 +641,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         return (!state->dirty || IDCANCEL != AskAboutSave(hwnd, state)) ? 1 : 0;
 
     case WM_DESTROY:
+        WinNemiStateSave(hwnd);  // primero -- necesita hwnd todavía válido
+        if (state->himlStd) ImageList_Destroy(state->himlStd);
+        if (state->himlSym) ImageList_Destroy(state->himlSym);
         WinNemiFontDeinitialize();
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, 0);
         delete state;
