@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="cadenas-de-texto">9. Cadenas de texto</h1>
+<p>Ya usaste cadenas desde el capítulo 1 (<code>&quot;Hola, Nemi&quot;</code>)
+para imprimir texto. Ahora vas a <strong>operarlas</strong>: medirlas,
+tomar un carácter, unir dos cadenas, y convertir entre texto y
+número.</p>
+<h2 id="longitud-e-indexación">Longitud e indexación</h2>
+<p>Una cadena se comporta, para efectos de indexar, como un arreglo de
+caracteres — base 1, igual que todo lo demás en Nemi:</p>
+<pre><code>s ← &quot;algoritmo&quot;
+imprime(long(s))
+imprime(s[1])
+imprime(s[5])</code></pre>
+<pre class="console"><code>9
+a
+r</code></pre>
+<p><code>s[1]</code> es el primer carácter (<code>&quot;a&quot;</code>),
+<code>long(s)</code> cuenta cuántos caracteres tiene.</p>
+<h2 id="unir-cadenas-concatena">Unir cadenas:
+<code>concatena</code></h2>
+<p>No existe un operador <code>+</code> para cadenas en Nemi
+(<code>+</code> es solo para números y bits, capítulo 2) — para unir
+texto se usa la función <code>concatena</code>:</p>
+<pre><code>s ← &quot;algoritmo&quot;
+imprime(concatena(s, &quot;s&quot;))
+imprime(concatena(&quot;Hola, &quot;, &quot;mundo&quot;))</code></pre>
+<pre class="console"><code>algoritmos
+Hola, mundo</code></pre>
+<h2 id="convertir-entre-texto-y-número-texto-valor">Convertir entre
+texto y número: <code>texto</code> / <code>valor</code></h2>
+<ul>
+<li><code>texto(x)</code> — convierte un número a la cadena que lo
+representa.</li>
+<li><code>valor(c)</code> — convierte un carácter dígito
+(<code>&quot;0&quot;</code>…<code>&quot;9&quot;</code>) al entero que representa.</li>
+</ul>
+<pre><code>imprime(texto(42))
+imprime(concatena(&quot;El resultado es &quot;, texto(7 · 6)))
+imprime(valor(&quot;5&quot;))
+imprime(valor(&quot;5&quot;) + valor(&quot;3&quot;))</code></pre>
+<pre class="console"><code>42
+El resultado es 42
+5
+8</code></pre>
+<p>La segunda línea es el patrón más común: quieres construir un mensaje
+que mezcle texto fijo con un número calculado — como
+<code>concatena</code> solo acepta cadenas, conviertes el número con
+<code>texto(...)</code> primero.</p>
+<h2 id="recorrer-una-cadena-con-para">Recorrer una cadena con
+<code>para</code></h2>
+<p>Como una cadena se indexa igual que un arreglo, recorrerla es el
+mismo patrón del capítulo 6:</p>
+<pre><code>función cuenta_vocales(s)
+    total ← 0
+    para i ← 1 hasta long(s)
+        c ← s[i]
+        si c = &quot;a&quot; o c = &quot;e&quot; o c = &quot;i&quot; o c = &quot;o&quot; o c = &quot;u&quot;
+            total ← total + 1
+        fin si
+    fin para
+    regresa total
+fin función
+
+imprime(cuenta_vocales(&quot;algoritmo&quot;))</code></pre>
+<pre class="console"><code>4</code></pre>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe <code>función es_palindromo(s)</code> que regrese
+<code>1</code> si <code>s</code> se lee igual al derecho y al revés
+(pista: compara <code>s[i]</code> con <code>s[long(s) - i + 1]</code>
+para cada <code>i</code>, o revisa <code>invierte</code> en la <a href="10_biblioteca_comun.html">biblioteca común</a> si prefieres no
+reescribirlo). Pruébala con <code>&quot;reconocer&quot;</code> y con
+<code>&quot;algoritmo&quot;</code>.</li>
+<li>Escribe un programa que convierta un número de dos dígitos (por
+ejemplo <code>47</code>) a texto y confirme, usando <code>valor</code>
+sobre cada carácter del resultado, que puedes reconstruir el número
+original.</li>
+<li>Usa <code>concatena</code> dentro de un <code>para</code> para
+construir la cadena <code>&quot;12345&quot;</code> uniendo, uno por uno,
+<code>texto(1)</code> hasta <code>texto(5)</code>.</li>
+<li>¿Qué crees que da <code>valor(&quot;a&quot;)</code> (una letra, no un dígito)?
+Antes de correrlo: ¿tiene sentido que Nemi lo permita, dado lo que hace
+<code>valor</code>?</li>
+</ol>
+<p>Siguiente: <a href="10_biblioteca_comun.html"><strong>Capítulo 10 —
+La biblioteca común</strong></a></p>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nemi</title>
+<style>
+body {
+    max-width: 46em;
+    margin: 2em auto;
+    padding: 0 1.5em;
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    color: #202020;
+}
+h1 { border-bottom: 2px solid #ddd; padding-bottom: 0.3em; }
+code {
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    background: #f4f4f4;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+ul.links li { margin: 0.4em 0; }
+a { color: #1a5fb4; }
+.tagline { color: #555; }
+</style>
+</head>
+<body>
+<h1>Nemi</h1>
+<p class="tagline">Un lenguaje de pseudocódigo con palabras clave en español,
+para aprender a programar desde cero — y de paso, matemáticas discretas.</p>
+
+<pre><code>función mcd(a, b)
+    mientras b ≠ 0
+        t ← b
+        b ← a mod b
+        a ← t
+    fin mientras
+    regresa a
+fin función</code></pre>
+
+<ul class="links">
+<li>📘 <a href="manual/00_indice.html">Manual</a> — tutorial de cero para
+    principiantes, en diez capítulos.</li>
+<li>📖 <a href="Nemi.html">Especificación completa</a> — la spec técnica
+    del lenguaje.</li>
+<li>📚 <a href="bibcom/README.html">Biblioteca común</a> — funciones ya
+    escritas y verificadas (teoría de números, conteo, conjuntos,
+    relaciones, booleana, cadenas).</li>
+<li>⬇️ <a href="https://github.com/rob-uaq-mx/Nemi/releases/latest">Descargar
+    WinNemi</a> — editor + consola para Windows, instalador autocontenido.</li>
+<li>💻 <a href="https://github.com/rob-uaq-mx/Nemi">Código fuente en
+    GitHub</a> — Python, C++, y WinNemi (Win32).</li>
+</ul>
+</body>
+</html>

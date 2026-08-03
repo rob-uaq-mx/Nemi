@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="decisiones">3. Decisiones</h1>
+<h2 id="si-alt-fin-si"><code>si</code> / <code>alt</code> /
+<code>fin si</code></h2>
+<p>Un programa que siempre hace exactamente lo mismo no es muy útil.
+<code>si</code> deja que tu programa <strong>decida</strong> qué hacer
+según una condición:</p>
+<pre><code>edad ← 15
+si edad ≥ 18
+    imprime(&quot;Puedes votar&quot;)
+alt
+    imprime(&quot;Todavía no puedes votar&quot;)
+fin si</code></pre>
+<pre class="console"><code>Todavía no puedes votar</code></pre>
+<p>Piezas:</p>
+<ul>
+<li><code>si CONDICIÓN</code> — si la condición es cierta, ejecuta lo
+que sigue.</li>
+<li><code>alt</code> (de “alternativamente”) — si no, ejecuta esto en su
+lugar. Es <strong>opcional</strong>: si no la necesitas, no la
+pongas.</li>
+<li><code>fin si</code> — <strong>obligatorio siempre</strong>, marca
+dónde termina el bloque. A diferencia de otros lenguajes que usas la
+sangría (los espacios al principio de la línea) para saber dónde termina
+un bloque, Nemi <strong>no</strong> se fija en la sangría — la sangría
+de este manual es solo para que un humano lo lea cómodo. Lo que de
+verdad marca el final es <code>fin si</code>.</li>
+</ul>
+<p>Sin <code>alt</code>, si la condición es falsa Nemi simplemente no
+ejecuta nada de ese bloque y sigue con lo que venga después:</p>
+<pre><code>n ← 7
+si n mod 2 = 0
+    imprime(n, &quot;es par&quot;)
+fin si
+imprime(&quot;fin del programa&quot;)</code></pre>
+<pre class="console"><code>fin del programa</code></pre>
+<p>(no se imprimió nada sobre “es par” porque 7 es impar — la condición
+fue falsa, así que ese bloque completo se saltó.)</p>
+<h2 id="comparar-valores">Comparar valores</h2>
+<p>Ya viste <code>=</code> en el capítulo 2. La familia completa:</p>
+<table>
+<thead>
+<tr>
+<th>Símbolo</th>
+<th>ASCII</th>
+<th>Significa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>=</code></td>
+<td><code>=</code></td>
+<td>Igual a</td>
+</tr>
+<tr>
+<td><code>≠</code></td>
+<td><code>!=</code></td>
+<td>Distinto de</td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td><code>&lt;</code></td>
+<td>Menor que</td>
+</tr>
+<tr>
+<td><code>≤</code></td>
+<td><code>&lt;=</code></td>
+<td>Menor o igual que</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td><code>&gt;</code></td>
+<td>Mayor que</td>
+</tr>
+<tr>
+<td><code>≥</code></td>
+<td><code>&gt;=</code></td>
+<td>Mayor o igual que</td>
+</tr>
+</tbody>
+</table>
+<p>Cualquier comparación te da <strong><code>verdadero</code></strong> o
+<strong><code>falso</code></strong> — nunca escribes esas dos palabras
+directamente en tu código (no son literales), solo aparecen como
+<em>resultado</em> de comparar algo:</p>
+<pre><code>imprime(5 = 5)      # verdadero
+imprime(5 = 6)       # falso</code></pre>
+<h2 id="combinar-condiciones-y-o-no">Combinar condiciones:
+<code>y</code> / <code>o</code> / <code>no</code></h2>
+<pre><code>n ← 14
+si n mod 2 = 0 y n &gt; 10
+    imprime(n, &quot;es par y mayor que 10&quot;)
+fin si
+
+si no(n mod 2 = 0)
+    imprime(&quot;es impar&quot;)
+alt
+    imprime(&quot;es par&quot;)
+fin si</code></pre>
+<pre class="console"><code>14 es par y mayor que 10
+es par</code></pre>
+<ul>
+<li><code>A y B</code> — cierto solo si <strong>ambas</strong> son
+ciertas.</li>
+<li><code>A o B</code> — cierto si <strong>al menos una</strong> es
+cierta.</li>
+<li><code>no A</code> — invierte: cierto si <code>A</code> es falso, y
+viceversa.</li>
+</ul>
+<p>También existen los símbolos <code>∧</code> (y), <code>∨</code> (o),
+<code>¬</code> (no) si prefieres notación matemática — son exactamente
+lo mismo, Nemi los trata idéntico.</p>
+<h2 id="un-detalle-sutil-bit-vs.-booleano">Un detalle sutil: bit
+vs. booleano</h2>
+<p>Esto no lo vas a necesitar todos los días, pero te va a ahorrar
+confusión más adelante (en particular con el capítulo 8 y con
+<code>booleana.nemi</code> de la biblioteca común). Nemi tiene
+<strong>dos</strong> formas de representar “verdad”:</p>
+<ol type="1">
+<li>Un <strong>booleano</strong> de verdad — lo que produce una
+comparación (<code>=</code>, <code>&lt;</code>, …). Se imprime como
+<code>verdadero</code>/<code>falso</code>.</li>
+<li>Un <strong>bit</strong> — el entero <code>0</code> o <code>1</code>,
+usado en teoría de circuitos y tablas de verdad. Se imprime como
+<code>0</code>/<code>1</code>.</li>
+</ol>
+<p><code>y</code>/<code>o</code>/<code>no</code>
+(<code>∧</code>/<code>∨</code>/<code>¬</code>) funcionan con
+<strong>ambos</strong>, y el resultado “hereda” el tipo de lo que les
+des: si les das bits (<code>0</code>/<code>1</code>), el resultado es un
+bit; si les das booleanos (de una comparación), el resultado es
+booleano.</p>
+<pre><code>imprime(1 y 0)              # 0  (bit y bit -&gt; bit)
+imprime((5 = 5) y (3 = 3))  # verdadero  (booleano y booleano -&gt; booleano)</code></pre>
+<p>No memorices esta regla ahora — solo recuerda que existe, para cuando
+veas <code>0</code>/<code>1</code> donde esperabas
+<code>verdadero</code>/<code>falso</code> (o viceversa) y quieras saber
+por qué.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe un programa que, dado un número guardado en una variable,
+imprima “positivo”, “negativo” o “cero” según corresponda (vas a
+necesitar <code>si</code> con más de dos casos — pista: puedes anidar un
+<code>si</code> dentro del <code>alt</code> de otro).</li>
+<li>Escribe la condición “n es múltiplo de 3 <strong>o</strong> de 5”
+usando <code>mod</code> y <code>o</code>. Pruébala con
+<code>n = 9</code>, <code>n = 10</code>, <code>n = 7</code>.</li>
+<li>¿Qué imprime <code>imprime(no (5 &gt; 3))</code>? Antes de correrlo,
+resuélvelo a mano.</li>
+<li>Reescribe el ejemplo de “par y mayor que 10” usando <code>∧</code>
+en vez de <code>y</code>, y confirma que da exactamente lo mismo.</li>
+</ol>
+<p>Siguiente: <a href="04_repeticion.html"><strong>Capítulo 4 —
+Repetición</strong></a></p>
+</body>
+</html>

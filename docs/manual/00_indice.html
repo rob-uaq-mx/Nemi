@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="manual-de-nemi-de-cero-a-programar-y-de-paso-matemáticas-discretas">Manual
+de Nemi — de cero a programar (y de paso, matemáticas discretas)</h1>
+<p>Este manual asume que <strong>nunca has programado antes</strong>.
+Tampoco asume que ya sabes matemáticas discretas — de hecho, varios
+capítulos usan Nemi para <em>entender</em> las ideas de matemáticas
+discretas ejecutándolas, no solo leyéndolas. Si ya sabes programar en
+otro lenguaje, puedes ir directo a <a href="referencia_rapida.html"><code>referencia_rapida.md</code></a> y
+volver aquí solo cuando algo no te quede claro.</p>
+<h2 id="qué-necesitas">Qué necesitas</h2>
+<p>Un intérprete de Nemi funcionando. Dos opciones:</p>
+<ul>
+<li><p><strong>WinNemi</strong> (Windows, más fácil para empezar): un
+editor con una consola integrada abajo. Pídele a quien te compartió este
+repo el instalador (<code>Windows/installer/</code>), o compílalo tú
+(<code>Windows/README.md</code>).</p></li>
+<li><p><strong>La línea de comandos</strong> (cualquier sistema, Python
+instalado):</p>
+<pre class="console"><code>$ cd python
+$ python -m nemi ../examples/factorial.nemi --llama &quot;factorial(5)&quot;
+120</code></pre>
+<p>Todos los ejemplos de este manual usan este formato. Si ves rarezas
+con acentos o símbolos en Windows, corre <code>set PYTHONUTF8=1</code>
+primero.</p></li>
+</ul>
+<p>No necesitas instalar nada más — ni compilador aparte, ni librerías.
+Nemi trae todo lo que usarás en este manual.</p>
+<h2 id="cómo-está-organizado">Cómo está organizado</h2>
+<p>Cada capítulo depende <strong>solo</strong> de los anteriores — no
+hay saltos. Si te saltas uno, probablemente algo del siguiente no tenga
+sentido. Cada uno termina con 2-4 ejercicios; resuélvelos antes de
+seguir, son la única forma de que el conocimiento se quede.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>Capítulo</th>
+<th>Qué aprendes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><a href="01_que_es_un_programa.html">¿Qué es un programa?</a></td>
+<td>Qué es ejecutar un algoritmo, tu primer programa Nemi,
+<code>imprime</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><a href="02_variables_y_tipos.html">Variables y tipos</a></td>
+<td><code>←</code>, enteros/reales/cadenas/bits, aritmética,
+<code>mod</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><a href="03_decisiones.html">Decisiones</a></td>
+<td><code>si</code>/<code>alt</code>, comparar valores,
+<code>y</code>/<code>o</code>/<code>no</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><a href="04_repeticion.html">Repetición</a></td>
+<td><code>para</code>/<code>mientras</code>, acumular resultados</td>
+</tr>
+<tr>
+<td>5</td>
+<td><a href="05_funciones.html">Funciones</a></td>
+<td><code>función</code>/<code>procedimiento</code>, parámetros,
+<code>regresa</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><a href="06_arreglos.html">Arreglos</a></td>
+<td>Listas de valores, <code>[i]</code>, por qué empiezan en 1</td>
+</tr>
+<tr>
+<td>7</td>
+<td><a href="07_conjuntos.html">Conjuntos</a></td>
+<td>El tipo <code>Conjunto</code>, <code>∈</code>/<code>⊆</code>,
+<code>para cada</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><a href="08_verificacion.html">Verificar tu trabajo</a></td>
+<td><code>afirma</code> para autocalificarte, <code>traza</code> para
+ver la recursión</td>
+</tr>
+<tr>
+<td>9</td>
+<td><a href="09_cadenas.html">Cadenas de texto</a></td>
+<td>Operar caracteres y texto</td>
+</tr>
+<tr>
+<td>10</td>
+<td><a href="10_biblioteca_comun.html">La biblioteca común</a></td>
+<td><code>incluye</code>, usar <code>bibcom/</code> en vez de
+reinventar</td>
+</tr>
+</tbody>
+</table>
+<p>Y para cuando ya sepas todo esto y solo necesites recordar la
+sintaxis: <a href="referencia_rapida.html"><strong>Referencia
+rápida</strong></a> — todo en tablas, sin explicaciones.</p>
+<h2 id="una-nota-sobre-cómo-aprender-con-nemi">Una nota sobre cómo
+aprender con Nemi</h2>
+<p>La ventaja de que Nemi sea <strong>ejecutable</strong> (a diferencia
+del pseudocódigo de un libro, que solo se lee) es que puedes
+<strong>comprobar</strong> cada idea en el momento en que la lees, no
+confiar en que la entendiste. Te vamos a insistir en esto todo el
+manual: cuando un capítulo diga “prueba esto”, ábrelo de verdad en tu
+intérprete y córrelo. Si el resultado no es el que esperabas, ahí está
+lo interesante — un malentendido real, no uno que se te va a olvidar en
+el examen.</p>
+<p>La especificación completa del lenguaje (para cuando este manual no
+cubra algo específico que necesites) está en <a href="../Nemi.html"><code>../Nemi.md</code></a> — es formal y densa,
+pero es la referencia autoritativa.</p>
+<p>Empieza aquí: <a href="01_que_es_un_programa.html"><strong>Capítulo 1
+— ¿Qué es un programa?</strong></a></p>
+</body>
+</html>

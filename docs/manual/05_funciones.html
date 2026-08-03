@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="funciones">5. Funciones</h1>
+<h2 id="función-nemi-función-matemática">Función Nemi ↔︎ función
+matemática</h2>
+<p>En matemáticas, una función toma una o más entradas y produce
+<strong>una</strong> salida: <code>f(x) = x²</code> toma <code>x</code>
+y da <code>x²</code>. Una función en Nemi hace exactamente eso — es la
+misma idea, ejecutable:</p>
+<pre><code>función cuadrado(x)
+    regresa x · x
+fin función
+
+imprime(cuadrado(5))
+imprime(cuadrado(7))</code></pre>
+<pre class="console"><code>25
+49</code></pre>
+<p>Piezas:</p>
+<ul>
+<li><code>función NOMBRE(parámetros)</code> — empieza la definición.
+<code>x</code> es un <strong>parámetro</strong>: una variable que solo
+existe dentro de esta función, y que toma el valor que le pases cuando
+la llames (<code>cuadrado(5)</code> hace que, por dentro, <code>x</code>
+valga <code>5</code>).</li>
+<li><code>regresa VALOR</code> — termina la función inmediatamente y
+entrega <code>VALOR</code> como resultado. Es exactamente el “= x²” de
+la notación matemática.</li>
+<li><code>fin función</code> — obligatorio, como todos los
+<code>fin ...</code> que ya conoces.</li>
+</ul>
+<p>Una vez definida, <code>cuadrado(5)</code> se usa como cualquier otro
+valor: puedes imprimirlo, guardarlo en una variable, usarlo dentro de
+una cuenta más grande (<code>cuadrado(3) + cuadrado(4)</code>).</p>
+<h2 id="funciones-con-varios-parámetros">Funciones con varios
+parámetros</h2>
+<pre><code>función area_rectangulo(base, altura)
+    regresa base · altura
+fin función
+
+imprime(area_rectangulo(4, 5))</code></pre>
+<p>Los parámetros se llenan <strong>en el orden en que los
+escribes</strong> al llamar la función: el primer valor que pasas va al
+primer parámetro, y así.</p>
+<h2 id="procedimiento-cuando-no-hay-un-valor-que-regresar"><code>procedimiento</code>:
+cuando no hay un valor que regresar</h2>
+<p>A veces quieres que algo <strong>suceda</strong> (imprimir, modificar
+algo), no que se calcule un valor. Para eso existe
+<code>procedimiento</code> — es igual que <code>función</code> pero sin
+<code>regresa</code> (o con un <code>regresa</code> sin valor, para
+cortar antes de tiempo):</p>
+<pre><code>procedimiento saluda(nombre)
+    imprime(&quot;Hola,&quot;, nombre)
+fin procedimiento
+
+saluda(&quot;Ana&quot;)
+saluda(&quot;Luis&quot;)</code></pre>
+<pre class="console"><code>Hola, Ana
+Hola, Luis</code></pre>
+<p>La diferencia entre <code>función</code> y <code>procedimiento</code>
+es de <strong>intención</strong>, para que quien lea tu código sepa qué
+esperar: una función se llama por su resultado
+(<code>imprime(cuadrado(5))</code> tiene sentido), un procedimiento se
+llama por su efecto (<code>saluda(&quot;Ana&quot;)</code> no regresa nada útil que
+imprimir).</p>
+<h2 id="recursión-una-función-que-se-llama-a-sí-misma">Recursión: una
+función que se llama a sí misma</h2>
+<p>Esta es la idea que más conecta programación con matemáticas
+discretas. Una definición <strong>recursiva</strong> define algo en
+términos de una versión más pequeña de sí mismo, más un caso base donde
+para:</p>
+<blockquote>
+<p><code>factorial(n) = n · factorial(n − 1)</code>, y
+<code>factorial(0) = 1</code>.</p>
+</blockquote>
+<p>Eso se traduce a Nemi casi palabra por palabra:</p>
+<pre><code>función factorial(n)
+    si n = 0
+        regresa 1
+    fin si
+    regresa n · factorial(n - 1)
+fin función
+
+imprime(factorial(5))</code></pre>
+<pre class="console"><code>120</code></pre>
+<p>Cómo lo ejecuta Nemi (síguelo con <code>factorial(3)</code> en tu
+cabeza): para calcular <code>factorial(3)</code> necesita
+<code>factorial(2)</code>, que necesita <code>factorial(1)</code>, que
+necesita <code>factorial(0)</code> — y ese último caso
+<strong>no</strong> necesita llamar a nadie más, regresa <code>1</code>
+directo (es el “caso base”). Con eso, <code>factorial(1)</code> puede
+terminar (<code>1 · 1 = 1</code>), luego <code>factorial(2)</code>
+(<code>2 · 1 = 2</code>), luego <code>factorial(3)</code>
+(<code>3 · 2 = 6</code>).</p>
+<p><strong>Toda función recursiva necesita un caso base</strong> — si
+<code>factorial</code> no tuviera el
+<code>si n = 0 ... regresa 1</code>, se llamaría a sí misma para siempre
+(con <code>n</code> cada vez más negativo) y nunca terminaría. Es el
+equivalente, en recursión, del ciclo infinito del capítulo 4.</p>
+<p>Si alguna vez quieres <strong>ver</strong> una recursión ejecutarse
+paso a paso en vez de imaginártela, adelántate a leer sobre
+<code>traza</code> en el <a href="08_verificacion.html">capítulo 8</a> —
+muestra exactamente esta secuencia de llamadas en pantalla.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe <code>función es_par(n)</code> que regrese <code>1</code> si
+<code>n</code> es par y <code>0</code> si no (usa <code>mod</code>,
+capítulo 2), y pruébala con varios números.</li>
+<li>Escribe la función matemática <code>f(n) = n² + 1</code> como una
+función Nemi y evalúala en <code>f(0)</code>, <code>f(1)</code>,
+<code>f(2)</code>, <code>f(3)</code>.</li>
+<li>Escribe <code>función suma_hasta(n)</code>
+<strong>recursiva</strong> que calcule <code>1 + 2 + ... + n</code>
+(pista: <code>suma_hasta(n) = n + suma_hasta(n − 1)</code>, con caso
+base <code>suma_hasta(0) = 0</code>). Compara
+<code>suma_hasta(10)</code> con el resultado del ejemplo “Acumular un
+resultado” del capítulo 4 (la suma de 1 a 10) — deben coincidir: son el
+mismo cálculo, uno con <code>para</code> y otro recursivo.</li>
+<li>¿Qué pasa si llamas <code>factorial(-1)</code> con la función de
+este capítulo? Antes de correrlo, piensa por qué (revisa el caso
+base).</li>
+</ol>
+<p>Siguiente: <a href="06_arreglos.html"><strong>Capítulo 6 —
+Arreglos</strong></a></p>
+</body>
+</html>

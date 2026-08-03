@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="arreglos">6. Arreglos</h1>
+<h2 id="una-lista-de-valores-con-un-solo-nombre">Una lista de valores,
+con un solo nombre</h2>
+<p>Un <strong>arreglo</strong> guarda varios valores bajo un solo
+nombre, en orden:</p>
+<pre><code>notas ← [8, 9, 7, 10, 6]
+imprime(notas)
+imprime(notas[1])
+imprime(notas[3])</code></pre>
+<pre class="console"><code>[8, 9, 7, 10, 6]
+8
+7</code></pre>
+<p><code>notas[1]</code> es el <strong>primer</strong> elemento — en
+Nemi los arreglos empiezan a contarse en <strong>1</strong>, no en 0.
+Esto es a propósito: es como cuenta la matemática de toda la vida (“el
+primer término de la sucesión”, <code>a₁</code>, no <code>a₀</code>), y
+es como está escrito el pseudocódigo del curso. Si vienes de otro
+lenguaje de programación donde el primer elemento es <code>[0]</code>,
+este es el detalle que más te va a traicionar al principio — tenlo
+presente.</p>
+<h2 id="modificar-un-elemento">Modificar un elemento</h2>
+<pre><code>notas[1] ← 10
+imprime(notas)</code></pre>
+<pre class="console"><code>[10, 9, 7, 10, 6]</code></pre>
+<h2 id="recorrer-un-arreglo-con-para">Recorrer un arreglo con
+<code>para</code></h2>
+<p>Combina lo que ya sabes: un arreglo tiene un tamaño
+(<code>long(arreglo)</code>, “cuán largo es”), así que puedes recorrerlo
+con un <code>para</code> de 1 hasta ese tamaño:</p>
+<pre><code>función máximo(s, n)
+    grande ← s[1]
+    para i ← 2 hasta n
+        si s[i] &gt; grande
+            grande ← s[i]
+        fin si
+    fin para
+    regresa grande
+fin función
+
+notas ← [8, 9, 7, 10, 6]
+imprime(máximo(notas, long(notas)))</code></pre>
+<pre class="console"><code>10</code></pre>
+<p>Esta es exactamente <code>máximo.nemi</code> del corpus de ejemplos
+del proyecto — el mismo algoritmo que verías descrito en prosa en unas
+notas de clase, pero ejecutable.</p>
+<h2 id="los-arreglos-son-por-referencia">Los arreglos son “por
+referencia”</h2>
+<p>Este es otro detalle importante: cuando pasas un arreglo a una
+función y esa función lo modifica, el cambio <strong>sí se nota
+afuera</strong> (a diferencia de un número o una cadena, que se pasan
+“por valor” — una copia).</p>
+<pre><code>procedimiento duplica_primero(s)
+    s[1] ← s[1] · 2
+fin procedimiento
+
+números ← [5, 10, 15]
+duplica_primero(números)
+imprime(números)</code></pre>
+<pre class="console"><code>[10, 10, 15]</code></pre>
+<p><code>números</code> cambió <strong>aunque
+<code>duplica_primero</code> nunca hizo <code>regresa</code></strong> —
+porque <code>s</code> dentro del procedimiento y <code>números</code>
+afuera son, en la práctica, la misma tabla en memoria, solo con dos
+nombres distintos. Esto es justo lo que hace posible que existan
+procedimientos como “ordena este arreglo en su lugar” sin tener que
+regresar un arreglo nuevo cada vez.</p>
+<h2 id="matrices-arreglos-de-arreglos">Matrices: arreglos de
+arreglos</h2>
+<p>Una matriz es un arreglo cuyos elementos son, a su vez, arreglos:</p>
+<pre><code>tabla ← [[1, 2], [3, 4]]
+imprime(tabla[1][2])
+imprime(tabla[2][1])</code></pre>
+<pre class="console"><code>2
+3</code></pre>
+<p><code>tabla[1]</code> es el primer renglón (<code>[1, 2]</code>);
+<code>tabla[1][2]</code> es el segundo elemento de ese renglón
+(<code>2</code>). Sigue siendo base 1 en ambos índices, como
+<code>Rᵢⱼ</code> en notación matemática de matrices.</p>
+<h2 id="cuando-el-índice-se-sale-del-rango">Cuando el índice se sale del
+rango</h2>
+<pre><code>notas ← [8, 9, 7]
+imprime(notas[0])</code></pre>
+<pre class="console"><code>nemi: índice 0 fuera de rango 1..3</code></pre>
+<p>Nemi no te deja leer una posición que no existe — ni <code>[0]</code>
+(recuerda: base 1) ni <code>[4]</code> en un arreglo de 3 elementos. Es
+un error, no un <code>∅</code> silencioso; mejor enterarte de inmediato
+que arrastrar un bug.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe <code>función suma_arreglo(s, n)</code> que sume todos los
+elementos de <code>s</code> (usa el patrón acumulador del capítulo 4,
+adaptado a recorrer un arreglo).</li>
+<li>Escribe un procedimiento que reciba un arreglo y un índice, e
+intercambie ese elemento con el siguiente (pista: vas a necesitar una
+variable temporal para no perder un valor al sobreescribirlo — o revisa
+si <code>intercambia(a, b)</code> te sirve directamente).</li>
+<li>Con la matriz <code>[[1, 2, 3], [4, 5, 6], [7, 8, 9]]</code>,
+escribe un programa que imprima la suma de la diagonal
+(<code>tabla[1][1] + tabla[2][2] + tabla[3][3]</code>).</li>
+<li>¿Qué crees que pasa si haces <code>otro ← notas</code> (sin
+corchetes) y luego modificas <code>otro[1]</code>? ¿Cambia también
+<code>notas</code>? Pruébalo — la respuesta se conecta directo con la
+sección “por referencia” de arriba.</li>
+</ol>
+<p>Siguiente: <a href="07_conjuntos.html"><strong>Capítulo 7 —
+Conjuntos</strong></a></p>
+</body>
+</html>

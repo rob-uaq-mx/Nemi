@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="qué-es-un-programa">1. ¿Qué es un programa?</h1>
+<h2 id="un-algoritmo-es-una-receta">Un algoritmo es una receta</h2>
+<p>Antes de tocar una computadora: un <strong>algoritmo</strong> es una
+lista de pasos, escritos en orden, que si los sigues exactamente como
+están (sin usar tu criterio para “arreglar” ninguno) te llevan de un
+punto de partida a un resultado. Una receta de cocina es un algoritmo.
+Las instrucciones para armar un mueble son un algoritmo. “Para saber si
+un número es par, divídelo entre 2 y ve si sobra algo” es un
+algoritmo.</p>
+<p>Un <strong>programa</strong> es un algoritmo escrito en un lenguaje
+que una computadora puede seguir <strong>sin ambigüedad</strong>. Esa es
+la diferencia con una receta de cocina: una receta dice “hornea hasta
+que esté dorado” y confía en que tú sabes juzgar “dorado”. Una
+computadora no puede juzgar nada que no esté definido con precisión
+exacta — por eso los lenguajes de programación son más rígidos que el
+español de todos los días.</p>
+<p><strong>Ejecutar</strong> un programa significa: la computadora sigue
+tus pasos, en el orden en que los escribiste, uno a la vez, sin saltarse
+ninguno y sin adivinar lo que quisiste decir.</p>
+<h2 id="tu-primer-programa">Tu primer programa</h2>
+<p>Crea un archivo de texto llamado <code>hola.nemi</code> con esta
+única línea:</p>
+<pre><code>imprime(&quot;Hola, Nemi&quot;)</code></pre>
+<p>Ejecútalo:</p>
+<pre class="console"><code>$ python -m nemi hola.nemi
+Hola, Nemi</code></pre>
+<p>(Si usas WinNemi: pega esa línea en el editor y presiona
+<strong>F5</strong>. El resultado aparece en la consola de abajo.)</p>
+<p>Acabas de escribir y ejecutar un programa. <code>imprime(...)</code>
+es una <strong>instrucción</strong>: le dice a Nemi “muestra esto en
+pantalla”. Todo lo que pongas entre los paréntesis, entre comillas,
+aparece tal cual — el texto <code>&quot;Hola, Nemi&quot;</code> se llama una
+<strong>cadena</strong> (una secuencia de caracteres).</p>
+<h2 id="varias-instrucciones-en-orden">Varias instrucciones, en
+orden</h2>
+<pre><code>imprime(&quot;Empezando...&quot;)
+imprime(&quot;2 + 2 =&quot;, 2 + 2)
+imprime(&quot;Listo.&quot;)</code></pre>
+<pre class="console"><code>$ python -m nemi varias.nemi
+Empezando...
+2 + 2 = 4
+Listo.</code></pre>
+<p>Tres cosas para notar:</p>
+<ol type="1">
+<li>Las instrucciones se ejecutan <strong>en el orden en que están
+escritas</strong>, de arriba hacia abajo. Nemi nunca “adivina” que
+quieres ejecutar la tercera línea antes que la segunda.</li>
+<li><code>imprime</code> acepta <strong>varias cosas separadas por
+comas</strong> y las muestra separadas por un espacio, todas en la misma
+línea de salida.</li>
+<li><code>2 + 2</code> no está entre comillas, así que Nemi lo
+<strong>calcula</strong> (te da <code>4</code>), en vez de imprimir
+literalmente el texto <code>2 + 2</code>. Esta es la diferencia
+fundamental entre una cadena (<code>&quot;...&quot;</code>, texto tal cual) y una
+expresión que Nemi evalúa.</li>
+</ol>
+<h2 id="por-qué-esto-importa-para-matemáticas-discretas">¿Por qué esto
+importa para matemáticas discretas?</h2>
+<p>Todo el curso de matemáticas discretas está lleno de afirmaciones del
+tipo “si sigues este proceso, en algún momento llegas a este resultado”
+— exactamente la definición de algoritmo de arriba. El algoritmo de
+Euclides para el máximo común divisor, generar todas las permutaciones
+de un conjunto, decidir si un número es primo: todos son “sigue estos
+pasos exactos”. La ventaja de escribirlos en Nemi en vez de solo leerlos
+en el libro es que puedes <strong>comprobar</strong> que entendiste el
+proceso completo, sin zonas grises — si te falta un paso o lo pusiste en
+el orden equivocado, Nemi no “lo arregla” ni adivina: simplemente no te
+da el resultado correcto, o truena con un error (como el que acabas de
+provocar si intentaste el ejercicio 2 de abajo) — cualquiera de las dos
+es información real sobre tu programa, no un obstáculo.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe un programa que imprima tu nombre en una línea, y en la
+siguiente línea el resultado de <code>10 mod 3</code> (el residuo de
+dividir 10 entre 3) junto con un texto que diga qué es.</li>
+<li>¿Qué pasa si quitas las comillas de <code>&quot;Hola, Nemi&quot;</code> y
+dejas <code>imprime(Hola, Nemi)</code>? Pruébalo y lee el mensaje de
+error — no te lo expliques, solo obsérvalo; en el capítulo 2 vas a
+entender exactamente qué significa.</li>
+<li>Escribe un programa con cinco instrucciones <code>imprime</code>
+distintas y confirma que salen en el orden en que las escribiste (parece
+obvio, pero vale la pena verlo con tus propios ojos una vez).</li>
+</ol>
+<p>Siguiente: <a href="02_variables_y_tipos.html"><strong>Capítulo 2 —
+Variables y tipos</strong></a></p>
+</body>
+</html>

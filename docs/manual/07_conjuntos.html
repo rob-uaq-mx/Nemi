@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="conjuntos">7. Conjuntos</h1>
+<h2 id="el-tipo-conjunto">El tipo <code>Conjunto</code></h2>
+<p>Un <strong>conjunto</strong> es una colección de valores <strong>sin
+orden</strong> y <strong>sin repeticiones</strong> — exactamente la
+definición de teoría de conjuntos. Se escribe con llaves:</p>
+<pre><code>A ← {1, 2, 3, 2, 1}
+imprime(A)</code></pre>
+<pre class="console"><code>{1, 2, 3}</code></pre>
+<p>Nota que los <code>2</code> y el segundo <code>1</code>
+desaparecieron: un conjunto no tiene repetidos, así que Nemi los colapsa
+automáticamente al crearlo — igual que <code>{1, 2, 3, 2, 1}</code> en
+notación matemática es literalmente el mismo conjunto que
+<code>{1, 2, 3}</code>.</p>
+<h2 id="pertenencia">Pertenencia: <code>∈</code></h2>
+<pre><code>A ← {1, 2, 3}
+imprime(3 ∈ A)
+imprime(5 en A)
+imprime(pertenece(3, A))</code></pre>
+<pre class="console"><code>verdadero
+falso
+verdadero</code></pre>
+<p><code>∈</code> no tiene un equivalente ASCII de un solo carácter (a
+diferencia de <code>≤</code>/<code>≠</code>) — si no puedes escribir el
+símbolo, tienes dos alternativas idénticas: la palabra
+<strong><code>en</code></strong> (<code>x en A</code>, tal cual, tan
+corto como el símbolo) o la función <code>pertenece(x, A)</code>.
+<code>∉</code> (no pertenece) solo tiene la forma simbólica — no hay
+palabra equivalente para la negación.</p>
+<h2 id="subconjuntos-y-operaciones">Subconjuntos y operaciones</h2>
+<pre><code>A ← {1, 2, 3}
+B ← {2, 3, 4}
+imprime(A ⊆ {1, 2, 3, 4})   # ¿A es subconjunto?
+imprime(union(A, B))
+imprime(interseccion(A, B))
+imprime(diferencia(A, B))
+imprime(cardinalidad(A))     # tamaño del conjunto</code></pre>
+<pre class="console"><code>verdadero
+{1, 2, 3, 4}
+{2, 3}
+{1}
+3</code></pre>
+<p><code>union</code>/<code>interseccion</code>/<code>diferencia</code>
+son las operaciones ∪/∩/∖ de teoría de conjuntos, pero se escriben como
+<strong>funciones</strong> (no hay un símbolo <code>∪</code> que puedas
+teclear directo en Nemi — es una decisión del lenguaje para no saturar
+el teclado de símbolos poco comunes).</p>
+<h2 id="para-cada-recorrer-un-conjunto-o-un-arreglo"><code>para cada</code>:
+recorrer un conjunto (o un arreglo)</h2>
+<p>Ya viste <code>para VARIABLE ← INICIO hasta FIN</code> en el capítulo
+4, que sirve para contar. <code>para cada</code> es distinto: recorre
+<strong>los elementos</strong> de una colección, sin que te importe en
+qué posición está cada uno (los conjuntos ni siquiera tienen “posición”
+— no están ordenados).</p>
+<pre><code>A ← {1, 2, 3, 4, 5}
+suma ← 0
+para cada x en A repite
+    suma ← suma + x
+fin para
+imprime(suma)</code></pre>
+<pre class="console"><code>15</code></pre>
+<p><code>para cada</code> también funciona sobre arreglos (capítulo 6),
+recorriendo cada elemento en orden.</p>
+<p>Nota que la palabra <code>en</code> aparece en dos construcciones que
+se <strong>parecen</strong> pero no son lo mismo: <code>x en A</code>
+(sección anterior) es una <strong>expresión</strong> que da
+<code>verdadero</code>/<code>falso</code>;
+<code>para cada x en A repite</code> es una <strong>instrucción
+completa</strong> que repite un bloque. Nemi distingue una de otra por
+dónde aparece <code>en</code> en la línea (justo después de
+<code>para cada</code>, o no), así que nunca hay ambigüedad real — pero
+si algo no compila como esperabas, vale la pena confirmar cuál de las
+dos querías escribir.</p>
+<h2 id="el-conjunto-vacío-vs.">El conjunto vacío: <code>∅</code>
+vs. <code>{}</code></h2>
+<p><code>∅</code> (o <code>{}</code>, son lo mismo <strong>como literal
+de entrada</strong>) es el conjunto sin elementos. Pero cuidado: cuando
+Nemi <strong>imprime</strong> algo, <code>∅</code> significa otra cosa —
+“esta llamada no regresó ningún valor” (por ejemplo, un
+<code>procedimiento</code> sin <code>regresa</code>):</p>
+<pre><code>procedimiento nada()
+fin procedimiento
+imprime(nada())    # ∅  -- &quot;no hay valor que mostrar&quot;
+imprime(∅)          # {} -- el conjunto vacío, impreso siempre como {}</code></pre>
+<pre class="console"><code>∅
+{}</code></pre>
+<p>Es el mismo glifo con dos significados según el contexto (al escribir
+tu código, <code>∅</code> siempre es el conjunto vacío; al leer una
+salida impresa, <code>∅</code> siempre es “sin valor”, nunca el conjunto
+vacío). La propia especificación de Nemi señala esta ambigüedad
+explícitamente — no es que se te esté escapando algo, es una decisión de
+diseño documentada.</p>
+<h2 id="por-qué-esto-vale-la-pena">¿Por qué esto vale la pena?</h2>
+<p>Antes de esta biblioteca, para trabajar con conjuntos en pseudocódigo
+tenías que simularlos con arreglos y revisar duplicados a mano —
+perdiendo de vista la idea matemática detrás. Con <code>Conjunto</code>
+de verdad, el código se lee (y se escribe) casi igual que la notación de
+la clase: <code>A ⊆ B</code>, <code>x ∈ A</code>, <code>|A|</code>
+(<code>cardinalidad(A)</code>). El capítulo 10 te muestra
+<code>conjuntos.nemi</code> y <code>relaciones.nemi</code> de la
+biblioteca común, que ya traen construidas <code>potencia</code>
+(conjunto potencia), <code>producto_cartesiano</code>, y las propiedades
+de relaciones (reflexiva, simétrica, transitiva) sobre exactamente este
+tipo.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Dado <code>A ← {1, 2, 3}</code> y <code>B ← {3, 4, 5}</code>,
+calcula <code>A ∪ B</code>, <code>A ∩ B</code>, y <code>A \ B</code>
+usando las funciones de este capítulo, sin adivinar el resultado antes
+de correrlo.</li>
+<li>Escribe una función que reciba un conjunto y regrese
+<code>verdadero</code> si <code>∅</code> (el conjunto vacío) es
+subconjunto de él. (Pista: matemáticamente siempre es cierto — ¿tu
+función lo confirma para cualquier conjunto que le pases?)</li>
+<li>Usa <code>para cada</code> para contar cuántos elementos de un
+conjunto son pares (necesitas una variable acumuladora, como en el
+capítulo 4, más <code>mod</code> del capítulo 2).</li>
+<li>¿Qué imprime <code>imprime({1, 2} = {2, 1})</code>? Piensa en la
+definición de conjunto (sin orden) antes de correrlo.</li>
+</ol>
+<p>Siguiente: <a href="08_verificacion.html"><strong>Capítulo 8 —
+Verificar tu trabajo</strong></a></p>
+</body>
+</html>

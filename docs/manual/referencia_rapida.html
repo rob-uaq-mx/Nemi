@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="referencia-rápida-de-nemi">Referencia rápida de Nemi</h1>
+<p>Cheat-sheet — sin explicaciones, solo sintaxis. Si algo aquí no te
+hace sentido, está explicado con calma en el <a href="00_indice.html">manual</a> (columna “capítulo”) o en <a href="../Nemi.html"><code>Nemi.md</code></a> (spec completa).</p>
+<h2 id="estructura-de-un-programa">Estructura de un programa</h2>
+<pre><code>función NOMBRE(p1, p2)      procedimiento NOMBRE(p1, p2)
+    ...                         ...
+    regresa VALOR                # sin regresa, o &quot;regresa&quot; sin valor
+fin función                  fin procedimiento
+
+# instrucciones sueltas (fuera de toda función) se ejecutan de arriba a abajo</code></pre>
+<p>Comentarios:
+<code># esto es un comentario, hasta el final de la línea</code>.</p>
+<h2 id="asignación-y-comparación">Asignación y comparación</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Símbolo</th>
+<th>ASCII</th>
+<th>Capítulo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Asignar</td>
+<td><code>←</code></td>
+<td><code>&lt;-</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>Igual a</td>
+<td><code>=</code></td>
+<td><code>=</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td>Distinto de</td>
+<td><code>≠</code></td>
+<td><code>!=</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>Menor / mayor</td>
+<td><code>&lt;</code> <code>&gt;</code></td>
+<td><code>&lt;</code> <code>&gt;</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td>Menor o igual / mayor o igual</td>
+<td><code>≤</code> <code>≥</code></td>
+<td><code>&lt;=</code> <code>&gt;=</code></td>
+<td>3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="aritmética">Aritmética</h2>
+<table>
+<thead>
+<tr>
+<th>Operación</th>
+<th>Símbolo</th>
+<th>ASCII</th>
+<th>Nota</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Suma</td>
+<td><code>+</code></td>
+<td><code>+</code></td>
+<td>bit+bit = OR (cap. 3)</td>
+</tr>
+<tr>
+<td>Resta</td>
+<td><code>−</code></td>
+<td><code>-</code></td>
+<td></td>
+</tr>
+<tr>
+<td>Producto</td>
+<td><code>·</code></td>
+<td><code>*</code></td>
+<td>bit·bit = AND (cap. 3)</td>
+</tr>
+<tr>
+<td>División exacta</td>
+<td><code>/</code></td>
+<td><code>/</code></td>
+<td>da fracción, no decimal (cap. 2)</td>
+</tr>
+<tr>
+<td>Residuo</td>
+<td><code>mod</code></td>
+<td><code>mod</code></td>
+<td>exige enteros</td>
+</tr>
+<tr>
+<td>Piso</td>
+<td><code>⌊x⌋</code></td>
+<td>—</td>
+<td>entero ≤ x, el más grande</td>
+</tr>
+<tr>
+<td>Techo</td>
+<td><code>⌈x⌉</code></td>
+<td>—</td>
+<td>entero ≥ x, el más chico</td>
+</tr>
+<tr>
+<td>Raíz</td>
+<td><code>√x</code></td>
+<td>—</td>
+<td>exacta si x es cuadrado perfecto</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lógica">Lógica</h2>
+<table>
+<thead>
+<tr>
+<th>Operación</th>
+<th>Símbolo</th>
+<th>Palabra</th>
+<th>Nota</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Y</td>
+<td><code>∧</code></td>
+<td><code>y</code></td>
+<td>cap. 3</td>
+</tr>
+<tr>
+<td>O</td>
+<td><code>∨</code></td>
+<td><code>o</code></td>
+<td>cap. 3</td>
+</tr>
+<tr>
+<td>No</td>
+<td><code>¬</code></td>
+<td><code>no</code></td>
+<td>cap. 3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="bloques-de-control">Bloques de control</h2>
+<pre><code>si CONDICIÓN                 mientras CONDICIÓN
+    ...                          ...
+alt                          fin mientras
+    ...
+fin si                       para VAR ← INICIO hasta FIN
+                                  ...
+                              fin para
+
+para cada VAR en COLECCIÓN repite
+    ...
+fin para</code></pre>
+<p><code>alt</code> es opcional. <code>entonces</code> (después de la
+condición de <code>si</code>) es opcional y no cambia nada.
+<code>repite</code> (después de <code>para cada ... en ...</code>)
+también es opcional.</p>
+<h2 id="funciones">Funciones</h2>
+<pre><code>función f(x, y) ... regresa x + y fin función
+f(3, 4)                          # llamar
+
+intercambia(a, b)                 # swap de dos variables/celdas
+
+afirma EXPR                       # aborta si EXPR es falsa
+afirma EXPR, &quot;mensaje&quot;
+
+traza EXPR                        # ejecuta EXPR mostrando cada llamada/regreso/asignación</code></pre>
+<h2 id="arreglos-y-matrices-base-1">Arreglos y matrices (base 1)</h2>
+<pre><code>s ← [10, 20, 30]      s[1]           →  10 (primer elemento)
+m ← [[1,2],[3,4]]     m[2][1]        →  3
+s[1] ← 99                            # modificar
+long(s)                              # tamaño
+agrega(s, 40)                        # crece el arreglo, por referencia
+copia(s)                             # copia independiente (profunda)
+arreglo_cero(n)                      # arreglo de n ceros
+matriz_cero(m, n)                    # matriz m×n de ceros</code></pre>
+<h2 id="conjuntos">Conjuntos</h2>
+<pre><code>A ← {1, 2, 3}          ∅ o {}         # conjunto vacío (como literal)
+x ∈ A     x en A     pertenece(x, A)   # pertenencia (las tres son iguales)
+x ∉ A                                 # no pertenencia
+A ⊆ B     subconjunto(A, B)           # subconjunto
+A ⊂ B                                 # subconjunto propio
+union(A, B)    interseccion(A, B)    diferencia(A, B)
+cardinalidad(A)                       # tamaño
+para cada x en A repite ... fin para  # recorrer</code></pre>
+<p><code>∅</code> <strong>impreso</strong> (no como literal) significa
+“sin valor”, no conjunto vacío — un conjunto vacío se imprime como
+<code>{}</code> (cap. 7).</p>
+<h2 id="cadenas">Cadenas</h2>
+<pre><code>s ← &quot;hola&quot;
+long(s)          s[1]            concatena(s, &quot;!&quot;)
+texto(42)         # número -&gt; cadena, &quot;42&quot;
+valor(&quot;5&quot;)        # dígito -&gt; número, 5</code></pre>
+<h2 id="primitivas-sueltas">Primitivas sueltas</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Primitiva</th>
+<th>Qué hace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>imprime(v1, v2, ...)</code></td>
+<td>Muestra valores separados por espacio + salto de línea</td>
+</tr>
+<tr>
+<td><code>piso(x)</code> / <code>techo(x)</code></td>
+<td>Alias función de <code>⌊x⌋</code> / <code>⌈x⌉</code></td>
+</tr>
+<tr>
+<td><code>raíz(x)</code> / <code>raiz(x)</code></td>
+<td>Alias función de <code>√x</code></td>
+</tr>
+<tr>
+<td><code>abs(x)</code></td>
+<td>Valor absoluto</td>
+</tr>
+<tr>
+<td><code>long(v)</code></td>
+<td>Tamaño (arreglo, conjunto o cadena)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="errores-comunes-mensaje-qué-significa">Errores comunes (mensaje
+→ qué significa)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Mensaje</th>
+<th>Causa típica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>variable no definida: X</code></td>
+<td>Usaste <code>X</code> antes de asignarle algo (¿te faltaron las
+comillas de una cadena?)</td>
+</tr>
+<tr>
+<td><code>índice N fuera de rango 1..M</code></td>
+<td>Índice fuera de rango — recuerda, empieza en 1</td>
+</tr>
+<tr>
+<td><code>el operador &#39;mod&#39; requiere enteros</code></td>
+<td>Le diste a <code>mod</code> algo que no es entero (¿viene de una
+<code>/</code> sin <code>⌊ ⌋</code>? cap. 4)</td>
+</tr>
+<tr>
+<td><code>afirma falsa: ...</code></td>
+<td>Un <code>afirma</code> que escribiste tú mismo no se cumplió (cap.
+8)</td>
+</tr>
+<tr>
+<td><code>desbordamiento de la pila de llamadas en F</code></td>
+<td><code>F</code> es recursiva y nunca llega a su caso base (cap.
+5)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><a href="00_indice.html"><strong>← Volver al índice del
+manual</strong></a></p>
+</body>
+</html>

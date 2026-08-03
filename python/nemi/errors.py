@@ -26,8 +26,8 @@ class SourceLocation:
             return "<unknown>"
         prefix = f"{self.file}, " if self.file else ""
         if self.column is None:
-            return f"{prefix}line {self.line}"
-        return f"{prefix}line {self.line}, col {self.column}"
+            return f"{prefix}{self.line}"
+        return f"{prefix}{self.line}:{self.column}"
 
     def __repr__(self):
         return f"@{self.line}:{self.column}"

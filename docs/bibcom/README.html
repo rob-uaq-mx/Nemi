@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="bibcom-biblioteca-común-de-nemi"><code>bibcom/</code> —
+biblioteca común de Nemi</h1>
+<p>Seis módulos <code>.nemi</code> con funciones ya escritas y
+<strong>verificadas</strong> (cada archivo trae sus propias líneas
+<code>afirma</code> — ver <code>Nemi.md</code> §19–§22 para el diseño y
+<code>backlog_v0.2.md</code> Fase 7 para cómo se verificaron). Si tu
+tarea o tus notas necesitan algo de esta tabla, <strong>no lo
+reescribas</strong>: inclúyelo.</p>
+<p>Si nunca usaste
+<code>afirma</code>/<code>Conjunto</code>/<code>para cada</code>/<code>incluye</code>,
+el <a href="../manual/00_indice.html">manual</a> los explica desde cero
+— en particular <a href="../manual/10_biblioteca_comun.html"><code>manual/10_biblioteca_comun.md</code></a>
+es la introducción a este mismo directorio.</p>
+<h2 id="cómo-usarla">Cómo usarla</h2>
+<pre><code>incluye &quot;bibcom.nemi&quot;        # trae los 6 módulos de una vez</code></pre>
+<p>o, si solo necesitas uno:</p>
+<pre><code>incluye &quot;teoria_numeros.nemi&quot;</code></pre>
+<p><code>incluye</code> resuelve la ruta relativa al directorio del
+archivo que la escribe (<code>Nemi.md</code> §10/§12) — así que tu
+propio archivo <code>.nemi</code> necesita estar en
+<code>bibcom/</code>, tener una ruta relativa correcta hacia ahí, o
+pasar la carpeta con <code>-I</code> al ejecutar <code>nemi</code>
+(p. ej. <code>nemi mi_archivo.nemi -I ruta/a/bibcom</code>) — esta
+última es la forma más cómoda si tu archivo vive en otra carpeta. Ver <a href="../manual/10_biblioteca_comun.html"><code>manual/10_biblioteca_comun.md</code></a>
+para ejemplos con rutas.</p>
+<p>Los ejemplos de la columna “Resultado” de las tablas de abajo son las
+líneas <code>afirma</code> reales de cada archivo — puedes verificarlos
+tú mismo:</p>
+<pre class="console"><code>$ cd python
+$ python -m nemi ../bibcom/teoria_numeros.nemi --llama &quot;mcd(504, 396)&quot;
+36</code></pre>
+<h2 id="teoria_numeros.nemi-unidad-2"><code>teoria_numeros.nemi</code>
+(Unidad 2)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mcd(a, b)</code></td>
+<td>Máximo común divisor (Euclides)</td>
+<td><code>mcd(504, 396)</code></td>
+<td><code>36</code></td>
+</tr>
+<tr>
+<td><code>mcm(a, b)</code></td>
+<td>Mínimo común múltiplo</td>
+<td><code>mcm(4, 6)</code></td>
+<td><code>12</code></td>
+</tr>
+<tr>
+<td><code>primo(n)</code></td>
+<td><code>1</code> si <code>n</code> es primo, <code>0</code> si no</td>
+<td><code>primo(97)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>exp_mod(a, n, z)</code></td>
+<td><code>aⁿ mod z</code> (exponenciación rápida, para RSA)</td>
+<td><code>exp_mod(572, 29, 713)</code></td>
+<td><code>113</code></td>
+</tr>
+<tr>
+<td><code>euclides_extendido(a, b)</code></td>
+<td><code>[d, s, t]</code> con <code>s·a + t·b = d</code>
+(<code>d = mcd(a,b)</code>)</td>
+<td><code>euclides_extendido(240, 46)[1]</code></td>
+<td><code>2</code></td>
+</tr>
+<tr>
+<td><code>mod_inv(a, m)</code></td>
+<td>Inverso de <code>a</code> módulo <code>m</code>, o <code>−1</code>
+si no existe</td>
+<td><code>mod_inv(3, 7)</code></td>
+<td><code>5</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="conteo.nemi-unidad-3"><code>conteo.nemi</code> (Unidad 3)</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>factorial(n)</code></td>
+<td><code>n!</code></td>
+<td><code>factorial(5)</code></td>
+<td><code>120</code></td>
+</tr>
+<tr>
+<td><code>P(n, r)</code></td>
+<td>Permutaciones de <code>r</code> de entre <code>n</code>
+(<code>n!/(n−r)!</code>)</td>
+<td><code>P(10, 4)</code></td>
+<td><code>5040</code></td>
+</tr>
+<tr>
+<td><code>C(n, r)</code></td>
+<td>Combinaciones de <code>r</code> de entre <code>n</code>
+(<code>n! / (r!(n−r)!)</code>, forma iterativa)</td>
+<td><code>C(52, 5)</code></td>
+<td><code>2598960</code></td>
+</tr>
+<tr>
+<td><code>pascal(n)</code></td>
+<td>Renglón <code>n</code> del triángulo de Pascal:
+<code>[C(n,0), …, C(n,n)]</code></td>
+<td><code>pascal(4)</code></td>
+<td><code>[1, 4, 6, 4, 1]</code></td>
+</tr>
+<tr>
+<td><code>multinomial(n, ks)</code></td>
+<td>Coeficiente multinomial (<code>ks</code> = <code>[n1, …, nt]</code>,
+suman <code>n</code>)</td>
+<td><code>multinomial(11, [1, 4, 4, 2])</code></td>
+<td><code>34650</code></td>
+</tr>
+<tr>
+<td><code>genera_combinaciones(n, r)</code></td>
+<td>Lista de las <code>C(n,r)</code> combinaciones, orden
+lexicográfico</td>
+<td><code>long(genera_combinaciones(6, 4))</code></td>
+<td><code>15</code></td>
+</tr>
+<tr>
+<td><code>genera_permutaciones(n)</code></td>
+<td>Lista de las <code>n!</code> permutaciones, orden lexicográfico</td>
+<td><code>long(genera_permutaciones(4))</code></td>
+<td><code>24</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="conjuntos.nemi-unidad-1"><code>conjuntos.nemi</code> (Unidad
+1)</h2>
+<p>Sobre el tipo <code>Conjunto</code> del núcleo (<code>Nemi.md</code>
+§20.2) — ver también
+<code>pertenece</code>/<code>subconjunto</code>/<code>union</code>/<code>interseccion</code>/<code>diferencia</code>/<code>cardinalidad</code>,
+que son primitivas del intérprete, no de este archivo.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>complemento(A, U)</code></td>
+<td><code>U \ A</code>, el complemento de <code>A</code> respecto al
+universo <code>U</code></td>
+<td><code>complemento({1}, {1,2,3})</code></td>
+<td><code>{2, 3}</code></td>
+</tr>
+<tr>
+<td><code>subconjunto_propio(A, B)</code></td>
+<td><code>verdadero</code> si <code>A ⊆ B</code> y
+<code>A ≠ B</code></td>
+<td><code>subconjunto_propio({1}, {1,2})</code></td>
+<td><code>verdadero</code></td>
+</tr>
+<tr>
+<td><code>potencia(A)</code></td>
+<td>Conjunto potencia <code>P(A)</code> (todos los subconjuntos)</td>
+<td><code>cardinalidad(potencia({1, 2, 3}))</code></td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td><code>producto_cartesiano(A, B)</code></td>
+<td>Conjunto de pares <code>[a, b]</code> con <code>a ∈ A</code>,
+<code>b ∈ B</code></td>
+<td><code>cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5}))</code></td>
+<td><code>6</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="relaciones.nemi-unidad-1"><code>relaciones.nemi</code> (Unidad
+1)</h2>
+<p>Una relación en <code>{1, …, n}</code> se representa como matriz
+cero-uno <code>n×n</code>, base 1 (<code>R[i][j] = 1</code> si
+<code>i</code> está relacionado con <code>j</code>).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>es_refleja(R, n)</code></td>
+<td><code>1</code> si <code>R[i][i] = 1</code> para todo
+<code>i</code></td>
+<td><code>es_refleja([[0,1,0],[0,0,1],[0,0,0]], 3)</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>es_simetrica(R, n)</code></td>
+<td><code>1</code> si <code>R[i][j] = R[j][i]</code> siempre</td>
+<td><code>es_simetrica([[0,1],[1,0]], 2)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>es_antisimetrica(R, n)</code></td>
+<td><code>1</code> si nunca <code>R[i][j] = R[j][i] = 1</code> con
+<code>i ≠ j</code></td>
+<td><code>es_antisimetrica([[1,1],[0,1]], 2)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>es_transitiva(R, n)</code></td>
+<td><code>1</code> si <code>R[i][j] ∧ R[j][k] ⟹ R[i][k]</code>
+siempre</td>
+<td><code>es_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3)</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>composicion(R, S, n)</code></td>
+<td><code>S∘R</code> (producto booleano de matrices)</td>
+<td><code>composicion([[0,1],[0,0]], [[0,0],[1,0]], 2)</code></td>
+<td><code>[[1, 0], [0, 0]]</code></td>
+</tr>
+<tr>
+<td><code>cerradura_transitiva(R, n)</code></td>
+<td>Cerradura transitiva (algoritmo de Warshall)</td>
+<td><code>cerradura_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3)[1][3]</code></td>
+<td><code>1</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="booleana.nemi-unidad-4"><code>booleana.nemi</code> (Unidad
+4)</h2>
+<p>Una función booleana de <code>n</code> variables se representa como
+un arreglo <code>t</code> de <code>2ⁿ</code> bits: <code>t[k+1]</code>
+es el valor sobre la entrada <code>k</code>
+(<code>0 ≤ k &lt; 2ⁿ</code>), donde <code>k</code> en binario es
+<code>(x1 x2 … xn)</code> con <code>x1</code> el bit más significativo
+(convención de mintérmino <code>mₖ</code>).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nand(a, b)</code></td>
+<td><code>¬(a ∧ b)</code></td>
+<td><code>nand(1, 1)</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>nor(a, b)</code></td>
+<td><code>¬(a ∨ b)</code></td>
+<td><code>nor(0, 0)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>xor(a, b)</code></td>
+<td>O exclusivo</td>
+<td><code>xor(1, 1)</code></td>
+<td><code>0</code></td>
+</tr>
+<tr>
+<td><code>xnor(a, b)</code></td>
+<td><code>¬xor(a, b)</code></td>
+<td><code>xnor(1, 1)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>filas(n)</code></td>
+<td><code>2ⁿ</code> (tamaño de la tabla de verdad)</td>
+<td><code>filas(3)</code></td>
+<td><code>8</code></td>
+</tr>
+<tr>
+<td><code>minterminos(t, n)</code></td>
+<td>Lista de <code>k</code> con <code>t[k+1] = 1</code></td>
+<td><code>minterminos([0, 1, 1, 0], 2)</code></td>
+<td><code>[1, 2]</code></td>
+</tr>
+<tr>
+<td><code>equivalentes(t1, t2, n)</code></td>
+<td><code>1</code> si <code>t1</code>/<code>t2</code> son la misma tabla
+de verdad</td>
+<td><code>equivalentes([0,1,1,0], [0,1,1,0], 2)</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td><code>evalua(t, bits, n)</code></td>
+<td>Valor de <code>t</code> sobre la entrada
+<code>bits[1..n]</code></td>
+<td><code>evalua([0,0,0,1,0,1,1,1], [1, 1, 0], 3)</code></td>
+<td><code>1</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="cadenas.nemi-unidades-12"><code>cadenas.nemi</code> (Unidades
+1–2)</h2>
+<p>Usa las primitivas de cadena del núcleo (<code>long</code>,
+<code>s[i]</code>, <code>concatena</code>, <code>texto</code>,
+<code>valor</code> — <code>Nemi.md</code> §22.6).</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Qué hace</th>
+<th>Ejemplo</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>invierte(s)</code></td>
+<td>Invierte una cadena</td>
+<td><code>invierte(&quot;abc&quot;)</code></td>
+<td><code>&quot;cba&quot;</code></td>
+</tr>
+<tr>
+<td><code>prefijo(s, k)</code></td>
+<td>Primeros <code>k</code> caracteres</td>
+<td><code>prefijo(&quot;discreta&quot;, 4)</code></td>
+<td><code>&quot;disc&quot;</code></td>
+</tr>
+<tr>
+<td><code>sufijo(s, k)</code></td>
+<td>Últimos <code>k</code> caracteres</td>
+<td><code>sufijo(&quot;discreta&quot;, 3)</code></td>
+<td><code>&quot;eta&quot;</code></td>
+</tr>
+<tr>
+<td><code>a_binario(n)</code></td>
+<td>Entero ≥ 0 → cadena binaria</td>
+<td><code>a_binario(13)</code></td>
+<td><code>&quot;1101&quot;</code></td>
+</tr>
+<tr>
+<td><code>desde_base(s, b)</code></td>
+<td>Cadena de dígitos en base <code>b</code> → entero</td>
+<td><code>desde_base(&quot;1101&quot;, 2)</code></td>
+<td><code>13</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>Fuente completa de cada módulo: los propios archivos
+<code>.nemi</code> en este directorio (código corto, léelos directamente
+— son el material de estudio, no cajas negras, como dice
+<code>Nemi.md</code> §19.1).</p>
+</body>
+</html>

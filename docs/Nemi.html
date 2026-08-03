@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="nemi-el-pseudolenguaje-de-algoritmos">Nemi — el pseudolenguaje
+de algoritmos</h1>
+<blockquote>
+<p><strong>Especificación versión 0.2</strong> · véase el historial de
+versiones en §24.</p>
+</blockquote>
+<p><strong>Nemi</strong> (del náhuatl <em>nemi</em>, «andar,
+ejecutarse») es el pseudolenguaje empleado en las notas del curso para
+presentar algoritmos. Este documento lo describe y sirve además como
+<strong>especificación</strong> para construir su intérprete. Los
+archivos de código fuente usan la extensión
+<strong><code>.nemi</code></strong>. El documento consta de dos
+partes:</p>
+<ul>
+<li><strong>Parte I — Guía de lectura.</strong> Cómo leer los algoritmos
+tal como aparecen en el libro (para estudiantes).</li>
+<li><strong>Parte II — Especificación del intérprete.</strong> Sintaxis
+concreta (UTF-8), gramática, semántica, decisiones de diseño y corpus de
+prueba (para quien implemente el intérprete).</li>
+</ul>
+<p>El lenguaje es <strong>UTF-8</strong>: usa símbolos matemáticos
+(<code>←</code>, <code>≤</code>, <code>≥</code>, <code>≠</code>,
+<code>∧</code>, <code>∨</code>, <code>¬</code>, <code>⌊ ⌋</code>,
+<code>⌈ ⌉</code>, <code>√</code>, <code>·</code>) y palabras clave en
+español con acentos (<code>función</code>, <code>regresa</code>, …).</p>
+<h1 id="parte-i-guía-de-lectura">Parte I — Guía de lectura</h1>
+<p>El pseudocódigo es un lenguaje intermedio entre el lenguaje natural y
+un lenguaje de programación: es lo bastante preciso para no ser ambiguo,
+pero no depende de la sintaxis de ningún lenguaje concreto. En el libro,
+los algoritmos se componen con los paquetes LaTeX <code>algorithm</code>
+/ <code>algpseudocode</code>, con palabras clave <strong>en
+español</strong>.</p>
+<h2 id="estructura-general">1. Estructura general</h2>
+<p>Cada algoritmo aparece en un recuadro rotulado <strong>«Algoritmo
+N»</strong> con un título. Su cuerpo tiene:</p>
+<ul>
+<li><strong>líneas numeradas</strong>, para referirse a ellas en el
+texto y en las pruebas de corrección;</li>
+<li><strong>sangría (indentación)</strong> que indica el alcance de cada
+estructura de control;</li>
+<li>un encabezado de <strong>función</strong> (devuelve un valor) o
+<strong>procedimiento</strong> (ejecuta acciones):</li>
+</ul>
+<pre><code>función nombre(parámetros)
+    ⟨cuerpo⟩
+
+procedimiento nombre(parámetros)
+    ⟨cuerpo⟩</code></pre>
+<h2 id="palabras-clave">2. Palabras clave</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Palabra clave</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>función</strong> / <strong>procedimiento</strong></td>
+<td>Encabezado del algoritmo</td>
+</tr>
+<tr>
+<td><strong>para … hasta … repite</strong></td>
+<td>Ciclo con contador (recorre un rango)</td>
+</tr>
+<tr>
+<td><strong>mientras</strong></td>
+<td>Ciclo condicional (se repite mientras la condición sea
+verdadera)</td>
+</tr>
+<tr>
+<td><strong>si … entonces / alt</strong></td>
+<td>Condicional (<code>alt</code> = rama alternativa/«si no»)</td>
+</tr>
+<tr>
+<td><strong>regresa</strong></td>
+<td>Devuelve un valor y termina</td>
+</tr>
+<tr>
+<td><strong>y</strong>, <strong>o</strong>, <strong>no</strong></td>
+<td>Conectores lógicos</td>
+</tr>
+</tbody>
+</table>
+<h2 id="asignación">3. Asignación</h2>
+<p>Guarda un valor en una variable; se escribe con <code>←</code> (o
+<code>=</code> en el libro):</p>
+<pre><code>grande ← s₁            resultado ← 1</code></pre>
+<p>No confundir con la <strong>igualdad</strong> de una condición
+(p. ej. <code>si n = 0</code>), donde <code>=</code> es una
+comparación.</p>
+<h2 id="estructuras-de-control">4. Estructuras de control</h2>
+<p><strong>Ciclo <code>para</code>:</strong> ejecuta el cuerpo con
+<code>i = a, a+1, …, b</code> (inclusive):</p>
+<pre><code>para i ← 2 hasta n repite
+    ⟨instrucciones⟩</code></pre>
+<p><strong>Ciclo <code>mientras</code>:</strong> repite mientras la
+condición sea verdadera (evaluada antes de cada iteración):</p>
+<pre><code>mientras b ≠ 0
+    r ← a mod b
+    a ← b
+    b ← r</code></pre>
+<p><strong>Condicional:</strong></p>
+<pre><code>si n = 0 entonces
+    regresa 1
+alt
+    regresa n · factorial(n − 1)</code></pre>
+<h2 id="recursión-salida-y-comentarios">5. Recursión, salida y
+comentarios</h2>
+<p>Una función se <strong>invoca</strong> por su nombre con argumentos
+entre paréntesis; si se invoca a sí misma, es <strong>recursión</strong>
+(requiere un <strong>caso base</strong>). <strong>regresa</strong>
+entrega el resultado y detiene la función. Los
+<strong>comentarios</strong> (al margen, con <code>▷</code>) no se
+ejecutan.</p>
+<h2 id="operadores-y-notación">6. Operadores y notación</h2>
+<ul>
+<li><strong>Aritméticos:</strong> <code>+</code>, <code>−</code>,
+<code>·</code>, <code>/</code>.</li>
+<li><strong>Enteros:</strong> <code>a mod b</code> (residuo),
+<code>⌊x⌋</code> (piso), <code>⌈x⌉</code> (techo), <code>√x</code>.</li>
+<li><strong>Comparación:</strong> <code>=</code>, <code>≠</code>,
+<code>&lt;</code>, <code>≤</code>, <code>&gt;</code>,
+<code>≥</code>.</li>
+<li><strong>Lógicos / booleanos:</strong> <code>∧</code> (y/AND),
+<code>∨</code> (o/OR), <code>¬</code> (no/NOT).</li>
+<li><strong>Subíndices / arreglos:</strong> <code>s₁, …, sₙ</code>
+(índice desde 1).</li>
+</ul>
+<h2 id="ejemplo-completo">7. Ejemplo completo</h2>
+<pre><code>Algoritmo 1: Encontrar el valor máximo en una sucesión
+
+1  función máximo(s, n)
+2      grande ← s₁
+3      para i ← 2 hasta n repite
+4          si sᵢ &gt; grande entonces
+5              grande ← sᵢ
+6      regresa grande</code></pre>
+<p>Se inicializa <code>grande</code> con el primer término (2); el ciclo
+recorre el resto (3) y actualiza <code>grande</code> cuando encuentra
+uno mayor (4–5). El <strong>invariante</strong> es «<code>grande</code>
+es el mayor entre <code>s₁, …, sᵢ</code>»; al terminar con
+<code>i = n</code>, <code>grande</code> es el máximo.</p>
+<h1 id="parte-ii-especificación-del-intérprete">Parte II —
+Especificación del intérprete</h1>
+<p><strong>Audiencia:</strong> quien implemente un intérprete de este
+lenguaje. Aquí se fijan la sintaxis concreta, la gramática, la semántica
+y las decisiones de diseño.</p>
+<blockquote>
+<p><strong>Punto de partida.</strong> Hasta ahora el lenguaje solo
+existía como <strong>notación matemática compuesta con LaTeX</strong>;
+no tenía una sintaxis concreta en texto. Esta Parte II
+<strong>define</strong> esa sintaxis concreta, en
+<strong>UTF-8</strong>.</p>
+</blockquote>
+<h2 id="decisiones-de-diseño-resumen">8. Decisiones de diseño
+(resumen)</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Cuestión</th>
+<th>Decisión</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Codificación</td>
+<td><strong>UTF-8</strong>. Se usan símbolos Unicode (<code>←</code>,
+<code>≤</code>, <code>≥</code>, <code>≠</code>, <code>∧</code>,
+<code>∨</code>, <code>¬</code>, <code>⌊⌋</code>, <code>⌈⌉</code>,
+<code>√</code>, <code>·</code>, <code>−</code>) y palabras acentuadas
+(<code>función</code>).</td>
+</tr>
+<tr>
+<td>Asignación vs. igualdad</td>
+<td><code>←</code> <strong>solo</strong> asigna; <code>=</code>
+<strong>solo</strong> compara. Elimina la ambigüedad del libro (que usa
+<code>=</code> para ambas).</td>
+</tr>
+<tr>
+<td>Delimitación de bloques</td>
+<td><strong>Cierres explícitos</strong>: <code>fin si</code>,
+<code>fin para</code>, <code>fin mientras</code>,
+<code>fin función</code>, <code>fin procedimiento</code>. (El libro usa
+<code>[noend]</code>, sin cierres, apoyado en la sangría; para el
+intérprete los cierres son más robustos.)</td>
+</tr>
+<tr>
+<td>Índices</td>
+<td><strong>Base 1</strong>: <code>s[1]</code> es el primer elemento. Es
+la convención del texto.</td>
+</tr>
+<tr>
+<td>Enteros</td>
+<td><strong>Precisión arbitraria (bignum)</strong>: RSA y factoriales lo
+exigen.</td>
+</tr>
+<tr>
+<td>Producto</td>
+<td><strong>Explícito con <code>·</code></strong>; no se admite
+yuxtaposición (<code>xy</code>), que sería ambigua con los
+identificadores multiletra.</td>
+</tr>
+<tr>
+<td><code>+</code> y <code>·</code> polisémicos</td>
+<td>Se resuelven <strong>por tipo de operando</strong> (véase §11).</td>
+</tr>
+<tr>
+<td>Parámetros</td>
+<td>Escalares por valor; <strong>arreglos/matrices/cadenas por
+referencia</strong> (hay algoritmos que los mutan).</td>
+</tr>
+<tr>
+<td>Acciones en prosa</td>
+<td>Se escriben entre guillemets <code>« … »</code>; <strong>no</strong>
+pertenecen al núcleo ejecutable (véase §14).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="estructura-léxica-tokens">9. Estructura léxica (tokens)</h2>
+<ul>
+<li><strong>Palabras clave:</strong> <code>función</code>,
+<code>procedimiento</code>, <code>para</code>, <code>hasta</code>,
+<code>repite</code>, <code>mientras</code>, <code>si</code>,
+<code>entonces</code>, <code>alt</code> (o
+<code>alternativamente</code>), <code>regresa</code>, <code>fin</code>,
+<code>incluye</code>, <code>y</code>, <code>o</code>, <code>no</code>.
+Las palabras <code>repite</code> y <code>entonces</code> son
+<strong>opcionales</strong> (azúcar sintáctico); el intérprete debe
+aceptarlas y también su ausencia.</li>
+<li><strong>Identificadores:</strong>
+<code>letra (letra | dígito | &#39;_&#39;)*</code>, donde <em>letra</em> incluye
+letras Unicode (por tanto <code>á</code>, <code>ñ</code>, etc. son
+válidas). Se permiten subíndices como parte del nombre si se escriben
+con <code>_</code> (<code>c_0</code>, <code>x_k</code>) o se usa
+indexación con corchetes (preferido).</li>
+<li><strong>Números:</strong> enteros (<code>0</code>, <code>42</code>,
+<code>3628800</code>) y reales (<code>8.3</code>). Las constantes
+<code>0</code> y <code>1</code> sirven también como bits.</li>
+<li><strong>Cadenas:</strong> entre comillas dobles:
+<code>&quot;001&quot;</code>.</li>
+<li><strong>Operadores y signos:</strong>
+<code>←  =  ≠  &lt;  ≤  &gt;  ≥  +  −  ·  /  mod  ¬  ∧  ∨ ⌊ ⌋ ⌈ ⌉ √  ( )  [ ]  ,</code>.
+Se aceptan también estos equivalentes de teclado: <code>&lt;-</code>(←),
+<code>!=</code>(≠), <code>&lt;=</code>(≤), <code>&gt;=</code>(≥),
+<code>-</code>(−), <code>*</code>(·). Los conectores lógicos se escriben
+en <strong>español</strong>, como palabra
+<code>y</code>/<code>o</code>/<code>no</code> o como símbolo
+<code>∧</code>/<code>∨</code>/<code>¬</code> (no se admiten
+<code>and</code>, <code>or</code>, <code>not</code>).</li>
+<li><strong>Comentarios:</strong> desde <code>▷</code> (o
+<code>#</code>) hasta el fin de línea; se ignoran.</li>
+<li><strong>Acciones en prosa:</strong> <code>« … »</code> (texto libre
+no ejecutable).</li>
+</ul>
+<h2 id="gramática-ebnf">10. Gramática (EBNF)</h2>
+<pre class="ebnf"><code>programa       ::= { definición | instrucción | inclusión } ;
+inclusión      ::= &quot;incluye&quot; cadena ;
+definición     ::= función | procedimiento ;
+función        ::= &quot;función&quot; ident &quot;(&quot; [ params ] &quot;)&quot; bloque &quot;fin&quot; &quot;función&quot; ;
+procedimiento  ::= &quot;procedimiento&quot; ident &quot;(&quot; [ params ] &quot;)&quot; bloque &quot;fin&quot; &quot;procedimiento&quot; ;
+params         ::= ident { &quot;,&quot; ident } ;
+
+bloque         ::= { instrucción } ;
+instrucción    ::= asignación | ciclo_para | ciclo_mientras
+                 | condicional | retorno | llamada | acción_prosa ;
+
+asignación     ::= lugar &quot;←&quot; expresión ;
+lugar          ::= ident { &quot;[&quot; expresión &quot;]&quot; } ;
+
+ciclo_para     ::= &quot;para&quot; ident &quot;←&quot; expresión &quot;hasta&quot; expresión [ &quot;repite&quot; ]
+                   bloque &quot;fin&quot; &quot;para&quot; ;
+ciclo_mientras ::= &quot;mientras&quot; expresión bloque &quot;fin&quot; &quot;mientras&quot; ;
+condicional    ::= &quot;si&quot; expresión [ &quot;entonces&quot; ] bloque
+                   [ &quot;alt&quot; bloque ] &quot;fin&quot; &quot;si&quot; ;
+retorno        ::= &quot;regresa&quot; [ expresión ] ;
+llamada        ::= ident &quot;(&quot; [ args ] &quot;)&quot; ;
+args           ::= expresión { &quot;,&quot; expresión } ;
+acción_prosa   ::= &quot;«&quot; texto &quot;»&quot; ;
+
+expresión      ::= expr_o ;
+expr_o         ::= expr_y   { (&quot;∨&quot; | &quot;o&quot;)  expr_y } ;
+expr_y         ::= expr_no  { (&quot;∧&quot; | &quot;y&quot;)  expr_no } ;
+expr_no        ::= [ &quot;¬&quot; | &quot;no&quot; ] expr_comp ;
+expr_comp      ::= expr_suma [ op_comp expr_suma ] ;
+op_comp        ::= &quot;=&quot; | &quot;≠&quot; | &quot;&lt;&quot; | &quot;≤&quot; | &quot;&gt;&quot; | &quot;≥&quot; ;
+expr_suma      ::= expr_prod  { (&quot;+&quot; | &quot;−&quot;) expr_prod } ;
+expr_prod      ::= expr_unaria { (&quot;·&quot; | &quot;/&quot; | &quot;mod&quot;) expr_unaria } ;
+expr_unaria    ::= [ &quot;−&quot; | &quot;¬&quot; ] expr_postfija ;
+expr_postfija  ::= primaria { &quot;[&quot; expresión &quot;]&quot; } ;
+primaria       ::= número | ident | llamada | cadena
+                 | &quot;(&quot; expresión &quot;)&quot;
+                 | &quot;⌊&quot; expresión &quot;⌋&quot; | &quot;⌈&quot; expresión &quot;⌉&quot;
+                 | &quot;√&quot; expr_unaria ;</code></pre>
+<blockquote>
+<p><strong>Extensión v0.2 (§20).</strong> La biblioteca estándar amplía
+esta gramática con literales de lista/conjunto (<code>lista_lit</code>,
+<code>conjunto_lit</code> en <code>primaria</code>), los operadores de
+conjunto <code>∈ ∉ ⊆ ⊂</code> en <code>op_comp</code>, el ciclo
+<code>ciclo_cada</code> (<code>para cada … en …</code>) en
+<code>instrucción</code>, y las instrucciones
+<code>afirma</code>/<code>traza</code>. Las producciones exactas están
+en §20–§21. Esta sección §10 documenta el <strong>núcleo
+(v0.1)</strong>; las adiciones son opcionales para un intérprete que
+solo ejecute el corpus §17.</p>
+</blockquote>
+<h2 id="tipos-y-operadores">11. Tipos y operadores</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Notas</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entero</td>
+<td><strong>bignum</strong> obligatorio.</td>
+</tr>
+<tr>
+<td>Real</td>
+<td>punto flotante (o racional); aparece en piso/techo y
+complejidad.</td>
+</tr>
+<tr>
+<td>Booleano / bit</td>
+<td><code>0</code> y <code>1</code>.</td>
+</tr>
+<tr>
+<td>Sucesión / arreglo</td>
+<td><strong>índice base 1</strong>, mutable.</td>
+</tr>
+<tr>
+<td>Matriz</td>
+<td>2D, base 1 (<code>W[i][j]</code>).</td>
+</tr>
+<tr>
+<td>Cadena</td>
+<td>sucesión de símbolos; indexable en base 1.</td>
+</tr>
+<tr>
+<td>Conjunto <em>(v0.2)</em></td>
+<td>no ordenado, sin duplicados; lo añade la biblioteca estándar
+(§20.2).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Precedencia</strong> (de mayor a menor):
+<code>¬</code>/<code>no</code> y unario <code>−</code> ▸ <code>·</code>
+<code>/</code> <code>mod</code> ▸ <code>+</code> <code>−</code> ▸
+comparaciones ▸ <code>∧</code>/<code>y</code> ▸
+<code>∨</code>/<code>o</code>.</p>
+<blockquote>
+<p><strong>Polisemia de <code>+</code> y <code>·</code>
+(crítico).</strong> En la <strong>Unidad 4</strong> (álgebra booleana y
+circuitos), <code>+</code> = <strong>OR</strong>, <code>·</code> =
+<strong>AND</strong> y <code>¬</code>/barra = <strong>NOT</strong>. En
+las <strong>Unidades 2–3</strong>, <code>+</code> y <code>·</code> son
+suma y producto usuales. Resolución recomendada: <strong>despacho por
+tipo</strong> — si ambos operandos son <code>bit/booleano</code>,
+<code>+ ↦ OR</code> y <code>· ↦ AND</code>; si son numéricos, son
+aritméticos. (Alternativa: operadores separados para el modo
+booleano.)</p>
+</blockquote>
+<h2 id="semántica-de-las-instrucciones">12. Semántica de las
+instrucciones</h2>
+<ul>
+<li><strong>Asignación</strong> <code>lugar ← e</code>: evalúa
+<code>e</code> y lo almacena en la variable o celda (<code>s[i]</code>,
+<code>W[i][j]</code>).</li>
+<li><strong><code>para i ← a hasta b</code></strong>: <code>i</code>
+toma <code>a, a+1, …, b</code> (paso <code>+1</code>,
+<strong>inclusive</strong>). Si <code>a &gt; b</code>, el cuerpo no se
+ejecuta. <code>i</code> no debería modificarse dentro del cuerpo.</li>
+<li><strong><code>mientras C</code></strong>: evalúa <code>C</code>
+<strong>antes</strong> de cada iteración; <code>∧</code>/<code>∨</code>
+con <strong>corto-circuito</strong>.</li>
+<li><strong><code>si C … alt …</code></strong>: la rama <code>alt</code>
+(alternativa) es opcional; se admite anidamiento.</li>
+<li><strong><code>regresa e</code></strong>: evalúa <code>e</code>,
+termina la función y devuelve el valor. En procedimientos,
+<code>regresa</code> sin valor termina anticipadamente.</li>
+<li><strong>Llamada / recursión:</strong> <code>f(args)</code>; requiere
+pila de llamadas.</li>
+</ul>
+<p><strong>Paso de parámetros.</strong> Escalares por valor;
+<strong>arreglos/matrices/cadenas por referencia</strong> (o con
+semántica observacionalmente equivalente). Justificación:
+<code>inserción_por_orden(s, n)</code> ordena <code>s</code> in situ, y
+<code>mcd</code> intercambia sus parámetros.</p>
+<p><strong>Instrucciones de nivel superior (cuerpo del guión).</strong>
+Además de definiciones, un programa puede contener <strong>instrucciones
+sueltas</strong> a nivel superior (§10). Se ejecutan <strong>en orden de
+aparición</strong> en un entorno global, <em>después</em> de registrar
+todas las definiciones (<strong>hoisting</strong>: una instrucción de
+nivel superior puede llamar a una función definida más abajo en el
+archivo). El <strong>valor</strong> de una instrucción suelta se
+<strong>descarta</strong> —una llamada como <code>factorial(100)</code>
+se evalúa por su efecto, <strong>no</strong> se imprime (semántica de
+guión, à la Python)—; para producir salida se usa
+<code>imprime(…)</code>. Un <code>regresa</code> a nivel superior
+termina el guión.</p>
+<p><strong>Inclusión de archivos (<code>incluye</code>).</strong>
+<code>incluye &quot;ruta.nemi&quot;</code> empalma las definiciones e
+instrucciones de otro archivo <code>.nemi</code> en el punto donde
+aparece, como si su texto se hubiera pegado ahí (la ruta se resuelve
+relativa al directorio del archivo que incluye, o al directorio de
+trabajo si el archivo aún no se ha guardado en disco). Es recursivo (un
+archivo incluido puede a su vez incluir otros) y <strong>detecta
+ciclos</strong> (A incluye B incluye A es un error, no un cuelgue). A
+diferencia de un simple empalme de texto, cada token conserva su archivo
+y línea de origen real, así que un error dentro de un archivo incluido
+señala <strong>ese</strong> archivo, no el que lo incluye. Esto permite
+tener una pequeña “biblioteca estándar”: un archivo con funciones de uso
+común que otros archivos reutilizan con <code>incluye</code>, en vez de
+copiarlas.</p>
+<h2 id="bloques">13. Bloques</h2>
+<p>Con <strong>cierres explícitos</strong> (<code>fin si</code>,
+<code>fin para</code>, <code>fin mientras</code>,
+<code>fin función</code>, <code>fin procedimiento</code>), el análisis
+no depende de la sangría. Aun así, se recomienda sangrar por
+legibilidad. (Si en cambio se prefiere regla de sangría estilo Python,
+hay que prohibir mezclar tabuladores y espacios; los cierres explícitos
+son la opción recomendada aquí.)</p>
+<h2 id="acciones-en-prosa-no-ejecutables">14. Acciones en prosa (no
+ejecutables)</h2>
+<p>Algunos algoritmos del libro contienen pasos redactados en lenguaje
+natural. Deben ir entre <code>« … »</code> y <strong>no</strong> forman
+parte del núcleo ejecutable. Opciones para tratarlas: (a) rechazarlas
+como «no soportadas»; (b) mapearlas a <strong>primitivas</strong>
+provistas por el entorno. Ejemplos hallados:</p>
+<ul>
+<li><code>« intercambia a y b »</code> → primitiva
+<code>intercambia(a, b)</code>.</li>
+<li><code>« dividir el tablero en cuatro subtableros de (n/2)×(n/2) »</code>
+(enlosado con trominos) — geometría de alto nivel; fuera del
+núcleo.</li>
+<li><code>« colocar un tromino en el centro … »</code>,
+<code>« enlosar con un tromino derecho »</code>.</li>
+</ul>
+<p>Recomendación: implementar un <strong>núcleo formal</strong>
+(aritmética, arreglos, control de flujo, recursión) que cubra la mayoría
+de los algoritmos y dejar los pasos geométricos como primitivas o fuera
+de alcance.</p>
+<h2 id="biblioteca-de-primitivas-sugerida">15. Biblioteca de primitivas
+sugerida</h2>
+<p><code>mod(a,b)</code> · <code>piso(x)</code> = ⌊x⌋ ·
+<code>techo(x)</code> = ⌈x⌉ · <code>raíz(x)</code> = √x ·
+<code>abs(x)</code> · <code>long(s)</code> = longitud de sucesión/cadena
+· <code>intercambia(x,y)</code> · concatenación y subcadenas ·
+operaciones de matrices cero-uno (producto booleano, <code>Aᵏ</code>,
+disyunción entrada a entrada) · conversión entre bases
+(binario/decimal/hexadecimal). Decidir cuáles son primitivas del
+lenguaje y cuáles se definen en el propio pseudolenguaje.</p>
+<h2 id="casos-límite-y-errores-a-definir">16. Casos límite y errores a
+definir</h2>
+<ul>
+<li><code>mod</code> o <code>/</code> con divisor <code>0</code>.</li>
+<li>Índice fuera de rango (recordar: base 1).</li>
+<li>Función que no ejecuta ningún <code>regresa</code> en algún
+camino.</li>
+<li>Recursión sin caso base (desbordamiento de pila).</li>
+<li>Operación entre tipos incompatibles (p. ej. <code>+</code> entre
+entero y bit): definir regla o error.</li>
+<li>Comparación entre tipos distintos.</li>
+</ul>
+<hr />
+<h2 id="corpus-de-prueba-transcrito-a-la-sintaxis-concreta">17. Corpus
+de prueba (transcrito a la sintaxis concreta)</h2>
+<p>Los algoritmos de las notas, ya con entradas y <strong>salidas
+verificadas</strong> en el texto, forman una suite de aceptación. A
+continuación se transcriben a la sintaxis concreta de la Parte II.</p>
+<h3 id="máximo-de-una-sucesión-máximo3943-9">17.1 Máximo de una sucesión
+· <code>máximo([3,9,4],3) = 9</code></h3>
+<pre><code>función máximo(s, n)
+    grande ← s[1]
+    para i ← 2 hasta n
+        si s[i] &gt; grande
+            grande ← s[i]
+        fin si
+    fin para
+    regresa grande
+fin función</code></pre>
+<h3 id="búsqueda-de-texto-busca_texto00130100016-4">17.2 Búsqueda de
+texto · <code>busca_texto(&quot;001&quot;,3,&quot;010001&quot;,6) = 4</code></h3>
+<pre><code>función busca_texto(p, m, t, n)
+    para i ← 1 hasta n − m + 1
+        j ← 1
+        mientras t[i + j − 1] = p[j]
+            j ← j + 1
+            si j &gt; m
+                regresa i          ▷ patrón encontrado en la posición i
+            fin si
+        fin mientras
+    fin para
+    regresa 0                       ▷ no aparece
+fin función</code></pre>
+<h3 id="inserción-por-orden-in-situ-3420195-5192034">17.3 Inserción por
+orden (in situ) · <code>[34,20,19,5] → [5,19,20,34]</code></h3>
+<pre><code>procedimiento inserción_por_orden(s, n)
+    para i ← 2 hasta n
+        val ← s[i]
+        j ← i − 1
+        mientras j ≥ 1 ∧ val &lt; s[j]
+            s[j + 1] ← s[j]
+            j ← j − 1
+        fin mientras
+        s[j + 1] ← val
+    fin para
+fin procedimiento</code></pre>
+<h3 id="prueba-de-primalidad-es_primo97-0-primo-es_primo51-3">17.4
+Prueba de primalidad · <code>es_primo(97) = 0</code> (primo);
+<code>es_primo(51) = 3</code></h3>
+<pre><code>función es_primo(n)
+    para d ← 2 hasta ⌊√n⌋
+        si n mod d = 0
+            regresa d              ▷ compuesto; d es un factor
+        fin si
+    fin para
+    regresa 0                       ▷ primo
+fin función</code></pre>
+<h3 id="máximo-común-divisor-euclides-mcd504396-36">17.5 Máximo común
+divisor (Euclides) · <code>mcd(504,396) = 36</code></h3>
+<pre><code>función mcd(a, b)                   ▷ a, b ≥ 0, no ambos cero
+    si a &lt; b
+        intercambia(a, b)
+    fin si
+    mientras b ≠ 0
+        r ← a mod b
+        a ← b
+        b ← r
+    fin mientras
+    regresa a
+fin función</code></pre>
+<h3 id="factorial-recursivo-factorial5-120">17.6 Factorial (recursivo) ·
+<code>factorial(5) = 120</code></h3>
+<pre><code>función factorial(n)
+    si n = 0
+        regresa 1
+    alt
+        regresa n · factorial(n − 1)
+    fin si
+fin función</code></pre>
+<h3 id="fibonacci-recursivo-fib5-5">17.7 Fibonacci (recursivo) ·
+<code>fib(5) = 5</code></h3>
+<pre><code>función fib(n)
+    si n = 0 ∨ n = 1
+        regresa n
+    alt
+        regresa fib(n − 1) + fib(n − 2)
+    fin si
+fin función</code></pre>
+<h3 id="factorial-iterativo-factorial_iter6-720">17.8 Factorial
+(iterativo) · <code>factorial_iter(6) = 720</code></h3>
+<pre><code>función factorial_iter(n)
+    resultado ← 1
+    para i ← 2 hasta n
+        resultado ← resultado · i
+    fin para
+    regresa resultado
+fin función</code></pre>
+<h3 id="fibonacci-iterativo-fib_iter10-55">17.9 Fibonacci (iterativo) ·
+<code>fib_iter(10) = 55</code></h3>
+<pre><code>función fib_iter(n)
+    si n = 0 ∨ n = 1
+        regresa n
+    fin si
+    anterior ← 0
+    actual ← 1
+    para i ← 2 hasta n
+        siguiente ← anterior + actual
+        anterior ← actual
+        actual ← siguiente
+    fin para
+    regresa actual
+fin función</code></pre>
+<h3 id="exponenciación-rápida-exp_rápida210-1024">17.10 Exponenciación
+rápida · <code>exp_rápida(2,10) = 1024</code></h3>
+<pre><code>función exp_rápida(a, n)
+    resultado ← 1
+    x ← a
+    mientras n &gt; 0
+        si n mod 2 = 1
+            resultado ← resultado · x
+        fin si
+        x ← x · x
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función</code></pre>
+<h3 id="exponenciación-modular-exp_mod57229713-113-exp_mod3137-3">17.11
+Exponenciación modular · <code>exp_mod(572,29,713) = 113</code>;
+<code>exp_mod(3,13,7) = 3</code></h3>
+<pre><code>función exp_mod(a, n, z)
+    resultado ← 1
+    x ← a mod z
+    mientras n &gt; 0
+        si n mod 2 = 1
+            resultado ← (resultado · x) mod z
+        fin si
+        x ← (x · x) mod z
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función</code></pre>
+<h3 id="algoritmo-de-warshall-cerradura-transitiva">17.12 Algoritmo de
+Warshall (cerradura transitiva)</h3>
+<p>Entrada: matriz cero-uno <code>A</code> (n×n). Salida: matriz de
+<code>R⁺</code> (véase Ejemplo 1.164 en <code>unidad1.tex</code>; la
+traza 4×4 W₀…W₄ es la prueba esperada).</p>
+<pre><code>función Warshall(A, n)              ▷ A es una matriz cero-uno n×n
+    W ← A
+    para k ← 1 hasta n
+        para i ← 1 hasta n
+            para j ← 1 hasta n
+                W[i][j] ← W[i][j] ∨ (W[i][k] ∧ W[k][j])
+            fin para
+        fin para
+    fin para
+    regresa W
+fin función</code></pre>
+<h3 id="enlosado-con-trominos-usa-acciones-en-prosa">17.13 Enlosado con
+trominos (usa acciones en prosa)</h3>
+<p>Ilustra los pasos <strong>no ejecutables</strong> (§14): probar solo
+la estructura de recursión, o proveer primitivas geométricas.</p>
+<pre><code>procedimiento enlosa(n, L)          ▷ n potencia de 2; L: cuadro faltante
+    si n = 2
+        « enlosar el bloque 2×2 con un tromino derecho »
+        regresa
+    fin si
+    « dividir el tablero en cuatro subtableros de (n/2)×(n/2) »
+    « colocar un tromino central que cubra un cuadro de cada subtablero sin L »
+    enlosa(n / 2, m1)
+    enlosa(n / 2, m2)
+    enlosa(n / 2, m3)
+    enlosa(n / 2, m4)
+fin procedimiento</code></pre>
+<hr />
+<h2 id="preguntas-abiertas-para-el-autor-del-curso">18. Preguntas
+abiertas para el autor del curso</h2>
+<ol type="1">
+<li>¿La sintaxis concreta debe <strong>parecerse al PDF</strong>
+(sangría, símbolos) o priorizar el análisis (cierres explícitos)?
+<strong>Resuelta:</strong> cierres explícitos.</li>
+<li>¿Se desea un <strong>modo booleano</strong> explícito para la Unidad
+4, o basta con resolver <code>+</code>/<code>·</code> por tipo?
+<strong>Resuelta:</strong> basta el despacho por tipo (no hay modo
+booleano separado).</li>
+<li>¿El intérprete debe <strong>ejecutar</strong> los algoritmos
+geométricos (trominos) o basta con el núcleo aritmético/estructural?
+<strong>Resuelta:</strong> las acciones en prosa <code>«…»</code> son no
+ejecutables (§14); basta el núcleo aritmético/estructural.</li>
+<li>¿Se quiere E/S interactiva (<code>leer</code>, <code>imprime</code>)
+además de <code>regresa</code>? <strong>Resuelta:</strong> sí para
+salida (<code>imprime</code>, §21.1); no hay entrada interactiva.</li>
+<li>¿Índices siempre base 1, o configurable? <strong>Resuelta:</strong>
+siempre base 1, no configurable.</li>
+</ol>
+<blockquote>
+<p><strong>Nota.</strong> Todas las preguntas de §18 quedaron resueltas
+y las respuestas están reflejadas arriba (las 2, 3 y 5 ya se
+documentaban en el <code>README</code> del repositorio; la 4 se
+especifica en §21.1). La biblioteca estándar y las extensiones que exige
+se especifican en §19–§23.</p>
+</blockquote>
+<hr />
+<h2 id="biblioteca-estándar-de-nemi-stdlib">19. Biblioteca estándar de
+Nemi (<code>stdlib</code>)</h2>
+<h3 id="motivación">19.1 Motivación</h3>
+<p>El curso reutiliza sin cesar un puñado de funciones
+(<code>C(n,r)</code>, <code>factorial</code>, <code>exp_mod</code>,
+<code>mcd</code>, generadores de permutaciones/combinaciones,
+operaciones de conjuntos…). En vez de que cada estudiante las reescriba
+—con el riesgo de errar un <code>⌊ ⌋</code> o una condición—, se provee
+una <strong>biblioteca estándar</strong>: un conjunto de archivos
+<code>.nemi</code> que se traen con <code>incluye</code> y funciones de
+núcleo (primitivas) provistas por el intérprete. Objetivo pedagógico:
+que el estudiante pueda <strong>verificar su tarea en una línea</strong>
+(<code>imprime(C(52,5))</code>) y que las definiciones de la biblioteca
+sean <strong>legibles</strong> (material de estudio), no cajas
+negras.</p>
+<h3 id="arquitectura-en-dos-capas">19.2 Arquitectura en dos capas</h3>
+<ol type="1">
+<li><strong>Núcleo (primitivas del intérprete).</strong> Cosas que no se
+pueden —o no conviene— escribir en el propio Nemi: el tipo
+<code>Conjunto</code> y sus operaciones, listas dinámicas
+(<code>agrega</code>), E/S (<code>imprime</code>), aserciones
+(<code>afirma</code>), manejo de cadenas, copia profunda. Se especifican
+en §20 y §21. Esto <strong>amplía</strong> el catálogo tentativo de
+§15.</li>
+<li><strong>Biblioteca en Nemi (<code>stdlib/*.nemi</code>).</strong>
+Todo lo demás se escribe en el propio lenguaje sobre el núcleo, y se
+distribuye como archivos <code>.nemi</code> incluibles. El código
+completo y sus pruebas están en §22.</li>
+</ol>
+<p><strong>Regla de oro para el implementador:</strong> si una función
+de §22 aparece con cuerpo Nemi, se implementa <strong>cargando ese
+archivo</strong>, no en el lenguaje anfitrión. Solo lo listado en
+§20–§21 es primitivo.</p>
+<h3 id="módulos">19.3 Módulos</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Unidad</th>
+<th>Contenido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>teoria_numeros.nemi</code></td>
+<td>2</td>
+<td><code>mcd</code>, <code>mcm</code>, <code>primo</code>,
+<code>exp_mod</code>, <code>euclides_extendido</code>,
+<code>mod_inv</code></td>
+</tr>
+<tr>
+<td><code>conteo.nemi</code></td>
+<td>3</td>
+<td><code>factorial</code>, <code>P</code>, <code>C</code>,
+<code>pascal</code>, <code>multinomial</code>,
+<code>genera_combinaciones</code>,
+<code>genera_permutaciones</code></td>
+</tr>
+<tr>
+<td><code>conjuntos.nemi</code></td>
+<td>1</td>
+<td><code>complemento</code>, <code>subconjunto_propio</code>,
+<code>potencia</code>, <code>producto_cartesiano</code></td>
+</tr>
+<tr>
+<td><code>relaciones.nemi</code></td>
+<td>1</td>
+<td><code>es_refleja</code>, <code>es_simetrica</code>,
+<code>es_transitiva</code>, <code>es_antisimetrica</code>,
+<code>composicion</code>, <code>cerradura_transitiva</code></td>
+</tr>
+<tr>
+<td><code>booleana.nemi</code></td>
+<td>4</td>
+<td><code>nand</code>, <code>nor</code>, <code>xor</code>,
+<code>xnor</code>, <code>minterminos</code>, <code>equivalentes</code>,
+<code>evalua</code></td>
+</tr>
+<tr>
+<td><code>cadenas.nemi</code></td>
+<td>1–2</td>
+<td><code>invierte</code>, <code>prefijo</code>, <code>sufijo</code>,
+<code>a_binario</code>, <code>desde_base</code></td>
+</tr>
+</tbody>
+</table>
+<p>Un archivo <code>stdlib.nemi</code> que solo hace
+<code>incluye</code> de todos los anteriores permite
+<code>incluye &quot;stdlib.nemi&quot;</code> de una vez.</p>
+<hr />
+<h2 id="extensiones-del-lenguaje-requeridas-por-la-biblioteca">20.
+Extensiones del lenguaje requeridas por la biblioteca</h2>
+<p>Estas son <strong>adiciones al núcleo</strong> (no estaban en la
+Parte II). Cada una indica su prioridad: <strong>[REQ]</strong> =
+requerida por la biblioteca; <strong>[OPC]</strong> = mejora, no
+bloquea.</p>
+<h3 id="literales-de-lista-y-de-conjunto-req">20.1 Literales de lista y
+de conjunto [REQ]</h3>
+<p>La gramática de §10 usaba <code>[ ]</code> solo para
+<strong>indexar</strong>; los literales <code>[1,2,3]</code> —que ya
+aparecen en las anotaciones de prueba de §17 y en las llamadas del
+corpus— no estaban formalizados. La versión 0.2
+<strong>extiende</strong> <code>primaria</code> (§10) con estas dos
+producciones (la nota al pie de §10 remite aquí):</p>
+<pre class="ebnf"><code>primaria    ::= número | ident | llamada | cadena
+              | &quot;(&quot; expresión &quot;)&quot;
+              | &quot;⌊&quot; expresión &quot;⌋&quot; | &quot;⌈&quot; expresión &quot;⌉&quot;
+              | &quot;√&quot; expr_unaria
+              | lista_lit | conjunto_lit ;          (* nuevo *)
+lista_lit   ::= &quot;[&quot; [ args ] &quot;]&quot; ;                  (* [], [1,2,3], [[0,1],[1,0]] *)
+conjunto_lit::= &quot;{&quot; [ args ] &quot;}&quot; | &quot;∅&quot; ;            (* {}, {1,2,3}, ∅ *)</code></pre>
+<ul>
+<li>Una <strong>lista</strong> (arreglo) es ordenada, mutable, indexada
+en base 1; puede anidar (matrices = listas de listas). <code>[]</code>
+es la lista vacía.</li>
+<li>Un <strong>conjunto</strong> es no ordenado y <strong>sin
+duplicados</strong>. <code>{}</code> y <code>∅</code> son el conjunto
+vacío. Al construir <code>{3,1,2,1}</code> los duplicados se colapsan →
+<code>{1,2,3}</code>.</li>
+</ul>
+<blockquote>
+<p><strong>Doble uso del glifo <code>∅</code> (decidido: se acepta y se
+documenta).</strong> El mismo símbolo <code>∅</code> cumple dos papeles
+según el contexto: como <strong>entrada</strong>, es el literal del
+conjunto vacío (arriba); como <strong>salida</strong>, es la
+representación impresa del valor «sin valor» (lo que devuelve un
+procedimiento o un <code>regresa</code> sin expresión; véase la tabla de
+§21.1). No hay ambigüedad de análisis sintáctico —uno ocurre en el
+código fuente, el otro solo en la salida de <code>imprime</code>—, pero
+conviene que el estudiante lo sepa: si ve <code>∅</code> impreso por
+<code>imprime(unProcedimiento())</code>, significa «no hubo valor», no
+«conjunto vacío» (un conjunto vacío se imprime <code>{}</code>, §21.1).
+- Los elementos de una lista o conjunto pueden ser enteros, reales,
+bits, cadenas, <strong>listas</strong> u <strong>otros
+conjuntos</strong> (necesario para pares ordenados <code>[a,b]</code> en
+relaciones y para el conjunto potencia).</p>
+</blockquote>
+<h3 id="tipo-conjunto-y-sus-primitivas-req">20.2 Tipo
+<code>Conjunto</code> y sus primitivas [REQ]</h3>
+<p>La versión 0.2 <strong>añade el tipo <code>Conjunto</code></strong>
+(ya listado como fila <em>v0.2</em> en la tabla de §11). Operaciones
+primitivas:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Primitiva</th>
+<th>Resultado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>x ∈ A</code></td>
+<td>bit <code>1</code>/<code>0</code> (pertenencia). También
+<code>x ∉ A</code>. Alternativas para <code>∈</code>: la palabra
+<strong><code>en</code></strong> (<code>x en A</code>) o la función
+<code>pertenece(x, A)</code> — ver nota siguiente</td>
+</tr>
+<tr>
+<td><code>A ⊆ B</code></td>
+<td>bit (subconjunto). Alias: <code>subconjunto(A, B)</code></td>
+</tr>
+<tr>
+<td><code>A ⊂ B</code></td>
+<td>bit (subconjunto propio)</td>
+</tr>
+<tr>
+<td><code>union(A, B)</code></td>
+<td><code>A ∪ B</code></td>
+</tr>
+<tr>
+<td><code>interseccion(A, B)</code></td>
+<td><code>A ∩ B</code></td>
+</tr>
+<tr>
+<td><code>diferencia(A, B)</code></td>
+<td><code>A ∖ B</code></td>
+</tr>
+<tr>
+<td><code>cardinalidad(A)</code></td>
+<td>número de elementos (entero). También <code>long(A)</code></td>
+</tr>
+<tr>
+<td><code>agrega(A, x)</code></td>
+<td>inserta <code>x</code> en <code>A</code> <strong>in situ</strong>
+(idempotente: si ya está, no cambia); muta por referencia, sin valor
+útil de retorno</td>
+</tr>
+</tbody>
+</table>
+<p>Los operadores de comparación de conjuntos <code>∈ ∉ ⊆ ⊂</code>
+<strong>extienden</strong> <code>op_comp</code> (§10), pues
+<strong>producen un bit</strong> y encajan en el nivel de las
+comparaciones. <code>∈</code> tiene además la palabra
+<strong><code>en</code></strong> como equivalente directo, sin necesitar
+teclado Unicode: <code>x en A</code> ≡ <code>x ∈ A</code>. Reutiliza la
+misma palabra clave que introduce <code>para cada … en …</code> (§20.3)
+sin ambigüedad de gramática — la producción <code>ciclo_cada</code>
+consume <code>en</code> en una posición fija, justo después de
+<code>cada ident</code>, nunca a través de <code>op_comp</code>, así que
+ambos usos conviven en la misma gramática sin conflicto. Los demás
+operadores de conjunto no tienen palabra equivalente: para
+<code>∉ ⊆ ⊂</code>, sin teclado Unicode, se usan las funciones
+<code>pertenece</code> y <code>subconjunto</code> (<code>∉</code>
+también se obtiene negando: <code>¬pertenece(x, A)</code>). (Las
+operaciones binarias <code>∪ ∩ ∖</code> se ofrecen como
+<strong>funciones</strong>, no operadores, para no ampliar la
+precedencia; <code>union</code>, <code>interseccion</code>,
+<code>diferencia</code>.)</p>
+<p><strong>Igualdad estructural [REQ].</strong> <code>=</code> y
+<code>≠</code> operan por <strong>valor</strong> sobre datos compuestos:
+- <strong>conjuntos:</strong> iguales si tienen exactamente los mismos
+elementos (sin importar orden), comparando recursivamente; -
+<strong>listas:</strong> iguales si tienen la misma longitud y elementos
+iguales <strong>en el mismo orden</strong>; - <strong>cadenas:</strong>
+iguales carácter a carácter.</p>
+<p><strong>Orden canónico [REQ].</strong> Para impresión determinista
+(§21.1) e iteración (§20.3), un conjunto se recorre en orden canónico:
+números en orden ascendente; cadenas en orden lexicográfico; elementos
+compuestos (listas/conjuntos) después de los escalares, ordenados por su
+representación impresa. (El objetivo es solo
+<strong>reproducibilidad</strong>, no un orden matemático profundo.)</p>
+<h3 id="ciclo-para-cada-en-req">20.3 Ciclo <code>para cada … en …</code>
+[REQ]</h3>
+<p>Itera sobre los elementos de un conjunto (en orden canónico) o de una
+lista (en orden de índice). Nuevas palabras clave:
+<strong><code>cada</code></strong>,
+<strong><code>en</code></strong>.</p>
+<pre class="ebnf"><code>ciclo_cada  ::= &quot;para&quot; &quot;cada&quot; ident &quot;en&quot; expresión [ &quot;repite&quot; ]
+                bloque &quot;fin&quot; &quot;para&quot; ;</code></pre>
+<pre><code>para cada x en A repite
+    ⟨usa x⟩
+fin para</code></pre>
+<p>No se debe mutar la colección que se está recorriendo dentro del
+ciclo (para eso, constrúyase otra colección y fusiónese después; véase
+<code>potencia</code> en §22.3).</p>
+<h3 id="listas-dinámicas-agrega-copia-ceros-req">20.4 Listas dinámicas:
+<code>agrega</code>, <code>copia</code>, ceros [REQ]</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Primitiva</th>
+<th>Semántica</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>agrega(a, x)</code></td>
+<td>si <code>a</code> es <strong>lista</strong>, <strong>anexa</strong>
+<code>x</code> al final (crece la longitud); muta por referencia. (Sobre
+<strong>conjunto</strong>: inserta, §20.2.)</td>
+</tr>
+<tr>
+<td><code>long(a)</code></td>
+<td>longitud de una lista / de una cadena / cardinalidad de un
+conjunto</td>
+</tr>
+<tr>
+<td><code>copia(a)</code></td>
+<td><strong>copia profunda</strong> (recursiva) de una
+lista/matriz/conjunto; indispensable para guardar instantáneas de un
+arreglo que luego se muta</td>
+</tr>
+<tr>
+<td><code>arreglo_cero(n)</code></td>
+<td>lista de <code>n</code> ceros, <code>[0,0,…,0]</code> (base 1)</td>
+</tr>
+<tr>
+<td><code>matriz_cero(m, n)</code></td>
+<td>matriz <code>m×n</code> de ceros</td>
+</tr>
+</tbody>
+</table>
+<p>Ejemplo del patrón «acumular resultados» (usado por los generadores
+de §22.2):</p>
+<pre><code>res ← []
+agrega(res, copia(s))        ▷ copia: s se mutará en la siguiente iteración</code></pre>
+<h3 id="retorno-de-varios-valores-mediante-lista-req-sin-tipo-nuevo">20.5
+Retorno de varios valores mediante lista [REQ, sin tipo nuevo]</h3>
+<p><code>regresa</code> sigue devolviendo <strong>un</strong> valor.
+Cuando una función necesita entregar varios (p. ej.
+<code>euclides_extendido → (d, s, t)</code>), <strong>devuelve una
+lista</strong> y quien llama la desempaca por índice:</p>
+<pre><code>t ← euclides_extendido(240, 46)   ▷ t = [d, s, t]
+d ← t[1]                          ▷ base 1</code></pre>
+<p>No se introduce un tipo «tupla»: una lista de longitud fija cumple el
+papel. Un <strong>par ordenado</strong> (para relaciones/producto
+cartesiano) es una lista de dos elementos <code>[a, b]</code>.</p>
+<h3 id="funciones-de-primera-clase-opc">20.6 Funciones de primera clase
+[OPC]</h3>
+<p>Permitir pasar una <strong>función como argumento</strong> habilita
+azúcar agradable como <code>tabla_verdad(mayoria, 3)</code>. <strong>No
+es requerida:</strong> el módulo <code>booleana.nemi</code> (§22.5)
+trabaja sobre <strong>arreglos de tabla de verdad</strong> (un arreglo
+de <code>2ⁿ</code> bits), lo que evita por completo el orden superior y
+es, además, pedagógicamente más claro (el estudiante construye la tabla,
+que es el concepto). Si se implementa, especifíquese por separado; el
+resto de la biblioteca <strong>no</strong> depende de ello.</p>
+<hr />
+<h2 id="imprime-afirma-y-traza">21. <code>imprime</code>,
+<code>afirma</code> y <code>traza</code></h2>
+<h3 id="imprime-req-resuelve-la-pregunta-abierta-18.4">21.1
+<code>imprime</code> [REQ] — resuelve la pregunta abierta §18.4</h3>
+<p><code>imprime(e₁, …, e_k)</code> evalúa sus argumentos, imprime sus
+representaciones <strong>separadas por un espacio</strong> y termina con
+<strong>salto de línea</strong>. <code>imprime()</code> (sin argumentos)
+imprime una línea en blanco. Formato por tipo:</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Representación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entero / real</td>
+<td>decimal (<code>120</code>, <code>8.3</code>)</td>
+</tr>
+<tr>
+<td>Bit</td>
+<td><code>0</code> / <code>1</code></td>
+</tr>
+<tr>
+<td>Cadena</td>
+<td>su contenido, <strong>sin</strong> comillas (<code>0011</code>)</td>
+</tr>
+<tr>
+<td>Lista</td>
+<td><code>[a, b, c]</code> (recursivo:
+<code>[[0, 1], [1, 0]]</code>)</td>
+</tr>
+<tr>
+<td>Conjunto</td>
+<td><code>{a, b, c}</code> en <strong>orden canónico</strong> (§20.2);
+vacío: <code>{}</code></td>
+</tr>
+<tr>
+<td>Matriz</td>
+<td>como lista de listas (una convención; opcionalmente una rejilla por
+renglones)</td>
+</tr>
+<tr>
+<td>Sin valor</td>
+<td><code>∅</code> — resultado de un procedimiento o de un
+<code>regresa</code> sin expresión. Es el comportamiento ya presente en
+las tres implementaciones. <strong>Ojo:</strong> mismo glifo que el
+literal de conjunto vacío en el código fuente (§20.1); el conjunto vacío
+<strong>impreso</strong> es <code>{}</code>, no <code>∅</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Es E/S por efecto: como dice §12, el valor de una instrucción suelta
+se descarta, así que <strong>solo</strong> <code>imprime</code> produce
+salida.</p>
+<h3 id="afirma-req-autoverificación">21.2 <code>afirma</code> [REQ] —
+autoverificación</h3>
+<p>Instrucción nueva para que el estudiante compruebe su código contra
+los valores del libro. Palabra clave
+<strong><code>afirma</code></strong>.</p>
+<pre class="ebnf"><code>instrucción ::= … | aserción ;
+aserción    ::= &quot;afirma&quot; expresión [ &quot;,&quot; cadena ] ;</code></pre>
+<p>Semántica: evalúa la expresión (debe dar un bit). Si es
+<code>1</code>, no hace nada. Si es <code>0</code>,
+<strong>aborta</strong> el programa con un mensaje que incluye el
+<strong>archivo y la línea</strong> (§12 conserva el origen real incluso
+a través de <code>incluye</code>), el <strong>texto fuente</strong> de
+la expresión y la cadena opcional. Ejemplo:</p>
+<pre><code>afirma C(8, 4) = 70
+afirma mcd(504, 396) = 36, &quot;Euclides&quot;</code></pre>
+<p>Como <code>=</code> es igualdad estructural (§20.2), también sirve
+para listas y conjuntos:
+<code>afirma pascal(4) = [1, 4, 6, 4, 1]</code>.</p>
+<h3 id="traza-opc-herramienta-de-comprensión">21.3 <code>traza</code>
+[OPC] — herramienta de comprensión</h3>
+<p>Ejecuta una expresión (típicamente una llamada) con
+<strong>rastreo</strong> activado durante su extensión dinámica. Palabra
+clave <strong><code>traza</code></strong>.</p>
+<pre class="ebnf"><code>instrucción ::= … | rastreo ;
+rastreo     ::= &quot;traza&quot; expresión ;</code></pre>
+<p>Semántica sugerida: mientras el rastreo está activo, cada
+<strong>entrada</strong> a una función imprime <code>→ f(args)</code>,
+cada <strong>retorno</strong> imprime <code>← valor</code>, y cada
+<strong>asignación</strong> ejecutada imprime
+<code>lugar ← valor</code>, todo con sangría según la profundidad de la
+pila. Convierte a Nemi en herramienta de <em>entendimiento</em> (p. ej.
+ver iterar a Euclides), no solo de cálculo. Es de menor prioridad que
+§21.1–2.</p>
+<hr />
+<h2 id="módulos-de-la-biblioteca-código-fuente-y-pruebas">22. Módulos de
+la biblioteca — código fuente y pruebas</h2>
+<p>Todo el código siguiente es Nemi <strong>puro</strong> sobre el
+núcleo (§20–§21). Las líneas <code>afirma</code> son la <strong>suite de
+aceptación</strong> del módulo; sus valores esperados están verificados
+contra las notas del curso y contra el intérprete.</p>
+<h3 id="teoria_numeros.nemi">22.1 <code>teoria_numeros.nemi</code></h3>
+<pre><code># teoria_numeros.nemi — Unidad 2 (solo núcleo aritmético)
+
+función mcd(a, b)
+    si a &lt; b
+        intercambia(a, b)
+    fin si
+    mientras b ≠ 0
+        r ← a mod b
+        a ← b
+        b ← r
+    fin mientras
+    regresa a
+fin función
+
+función mcm(a, b)
+    regresa ⌊(a · b) / mcd(a, b)⌋
+fin función
+
+función primo(n)
+    si n &lt; 2
+        regresa 0
+    fin si
+    para d ← 2 hasta ⌊√n⌋
+        si n mod d = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función exp_mod(a, n, z)
+    resultado ← 1
+    x ← a mod z
+    mientras n &gt; 0
+        si n mod 2 = 1
+            resultado ← (resultado · x) mod z
+        fin si
+        x ← (x · x) mod z
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa resultado
+fin función
+
+función euclides_extendido(a, b)      # regresa [d, s, t] con s·a + t·b = d
+    si b = 0
+        regresa [a, 1, 0]
+    fin si
+    r ← euclides_extendido(b, a mod b)
+    regresa [r[1], r[3], r[2] − ⌊a / b⌋ · r[3]]
+fin función
+
+función mod_inv(a, m)                  # inverso de a módulo m, o −1 si no existe
+    r ← euclides_extendido(a mod m, m)
+    si r[1] ≠ 1
+        regresa −1
+    fin si
+    regresa r[2] mod m
+fin función
+
+# --- pruebas ---
+afirma mcd(504, 396) = 36
+afirma mcm(4, 6) = 12
+afirma primo(97) = 1
+afirma primo(51) = 0
+afirma exp_mod(7, 13, 11) = 2
+afirma exp_mod(572, 29, 713) = 113
+afirma mod_inv(3, 7) = 5
+afirma euclides_extendido(240, 46)[1] = 2</code></pre>
+<h3 id="conteo.nemi">22.2 <code>conteo.nemi</code></h3>
+<pre><code># conteo.nemi — Unidad 3
+
+función factorial(n)
+    resultado ← 1
+    para i ← 2 hasta n
+        resultado ← resultado · i
+    fin para
+    regresa resultado
+fin función
+
+función P(n, r)
+    resultado ← 1
+    para i ← 0 hasta r − 1
+        resultado ← resultado · (n − i)
+    fin para
+    regresa resultado
+fin función
+
+función C(n, r)                        # forma iterativa: evita factoriales enormes
+    resultado ← 1
+    para i ← 1 hasta r
+        resultado ← ⌊(resultado · (n − r + i)) / i⌋
+    fin para
+    regresa resultado
+fin función
+
+función pascal(n)                      # regresa el renglón n: [C(n,0), …, C(n,n)]
+    fila ← [1]
+    para k ← 1 hasta n
+        agrega(fila, C(n, k))
+    fin para
+    regresa fila
+fin función
+
+función multinomial(n, ks)             # ks = [n1, …, nt] con suma n
+    resultado ← factorial(n)
+    para cada k en ks repite
+        resultado ← ⌊resultado / factorial(k)⌋
+    fin para
+    regresa resultado
+fin función
+
+función genera_combinaciones(n, r)     # lista de las C(n,r) combinaciones (orden lexicográfico)
+    s ← arreglo_cero(r)
+    para i ← 1 hasta r
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta C(n, r)
+        m ← r
+        tope ← n
+        mientras s[m] = tope
+            m ← m − 1
+            tope ← tope − 1
+        fin mientras
+        s[m] ← s[m] + 1
+        para j ← m + 1 hasta r
+            s[j] ← s[j − 1] + 1
+        fin para
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+función genera_permutaciones(n)        # lista de las n! permutaciones (orden lexicográfico)
+    s ← arreglo_cero(n)
+    para i ← 1 hasta n
+        s[i] ← i
+    fin para
+    res ← []
+    agrega(res, copia(s))
+    para c ← 2 hasta factorial(n)
+        m ← n − 1
+        mientras s[m] &gt; s[m + 1]
+            m ← m − 1
+        fin mientras
+        k ← n
+        mientras s[m] &gt; s[k]
+            k ← k − 1
+        fin mientras
+        tmp ← s[m]
+        s[m] ← s[k]
+        s[k] ← tmp
+        p ← m + 1
+        q ← n
+        mientras p &lt; q
+            tmp ← s[p]
+            s[p] ← s[q]
+            s[q] ← tmp
+            p ← p + 1
+            q ← q − 1
+        fin mientras
+        agrega(res, copia(s))
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma factorial(5) = 120
+afirma P(10, 4) = 5040
+afirma C(52, 5) = 2598960
+afirma C(8, 4) = 70
+afirma pascal(4) = [1, 4, 6, 4, 1]
+afirma multinomial(11, [1, 4, 4, 2]) = 34650
+afirma long(genera_combinaciones(6, 4)) = 15
+afirma long(genera_permutaciones(4)) = 24</code></pre>
+<h3 id="conjuntos.nemi">22.3 <code>conjuntos.nemi</code></h3>
+<pre><code># conjuntos.nemi — Unidad 1 (sobre las primitivas de Conjunto, §20.2)
+
+función complemento(A, U)
+    regresa diferencia(U, A)
+fin función
+
+función subconjunto_propio(A, B)
+    regresa subconjunto(A, B) ∧ ¬(A = B)
+fin función
+
+función potencia(A)                    # conjunto potencia P(A)
+    res ← { ∅ }                        # conjunto que contiene al conjunto vacío
+    para cada x en A repite
+        nuevos ← ∅                     # se acumula aparte para no mutar &#39;res&#39; al iterar
+        para cada S en res repite
+            agrega(nuevos, union(S, {x}))
+        fin para
+        para cada T en nuevos repite
+            agrega(res, T)
+        fin para
+    fin para
+    regresa res
+fin función
+
+función producto_cartesiano(A, B)      # conjunto de pares [a, b]
+    res ← ∅
+    para cada a en A repite
+        para cada b en B repite
+            agrega(res, [a, b])
+        fin para
+    fin para
+    regresa res
+fin función
+
+# --- pruebas ---
+afirma cardinalidad({3, 1, 2, 1}) = 3
+afirma (2 ∈ {1, 2, 3}) = 1
+afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma cardinalidad(potencia({1, 2, 3})) = 8
+afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6</code></pre>
+<h3 id="relaciones.nemi">22.4 <code>relaciones.nemi</code></h3>
+<pre><code># relaciones.nemi — Unidad 1 (relación = matriz cero-uno n×n, base 1)
+
+función es_refleja(R, n)
+    para i ← 1 hasta n
+        si R[i][i] = 0
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función es_simetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si R[i][j] ≠ R[j][i]
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_antisimetrica(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            si i ≠ j ∧ R[i][j] = 1 ∧ R[j][i] = 1
+                regresa 0
+            fin si
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función es_transitiva(R, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][j] = 1 ∧ R[j][k] = 1 ∧ R[i][k] = 0
+                    regresa 0
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa 1
+fin función
+
+función composicion(R, S, n)           # producto booleano de matrices: S∘R
+    T ← matriz_cero(n, n)
+    para i ← 1 hasta n
+        para j ← 1 hasta n
+            para k ← 1 hasta n
+                si R[i][k] = 1 ∧ S[k][j] = 1
+                    T[i][j] ← 1
+                fin si
+            fin para
+        fin para
+    fin para
+    regresa T
+fin función
+
+función cerradura_transitiva(R, n)     # algoritmo de Warshall (véase §17.12)
+    W ← copia(R)
+    para k ← 1 hasta n
+        para i ← 1 hasta n
+            para j ← 1 hasta n
+                W[i][j] ← W[i][j] ∨ (W[i][k] ∧ W[k][j])
+            fin para
+        fin para
+    fin para
+    regresa W
+fin función
+
+# --- pruebas ---   (R = {(1,2),(2,3)} sobre {1,2,3})
+afirma es_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma es_refleja([[0,1,0],[0,0,1],[0,0,0]], 3) = 0
+afirma cerradura_transitiva([[0,1,0],[0,0,1],[0,0,0]], 3)[1][3] = 1</code></pre>
+<h3 id="booleana.nemi">22.5 <code>booleana.nemi</code></h3>
+<pre><code># booleana.nemi — Unidad 4
+# Una función booleana de n variables se representa como un arreglo t de 2^n
+# bits: t[k+1] es el valor sobre la entrada k (0 ≤ k &lt; 2^n), donde k en binario
+# es (x1 x2 … xn) con x1 el bit más significativo (convención de mintérmino m_k).
+
+función nand(a, b)
+    regresa ¬(a ∧ b)
+fin función
+
+función nor(a, b)
+    regresa ¬(a ∨ b)
+fin función
+
+función xor(a, b)
+    regresa (a ∧ ¬b) ∨ (¬a ∧ b)
+fin función
+
+función xnor(a, b)
+    regresa ¬xor(a, b)
+fin función
+
+función filas(n)                       # 2^n
+    f ← 1
+    para i ← 1 hasta n
+        f ← f · 2
+    fin para
+    regresa f
+fin función
+
+función minterminos(t, n)              # lista de k con t[k+1] = 1
+    res ← []
+    para k ← 0 hasta filas(n) − 1
+        si t[k + 1] = 1
+            agrega(res, k)
+        fin si
+    fin para
+    regresa res
+fin función
+
+función equivalentes(t1, t2, n)        # ¿misma tabla de verdad?
+    para k ← 0 hasta filas(n) − 1
+        si t1[k + 1] ≠ t2[k + 1]
+            regresa 0
+        fin si
+    fin para
+    regresa 1
+fin función
+
+función evalua(t, bits, n)             # valor de t sobre la entrada (bits[1..n])
+    k ← 0
+    para i ← 1 hasta n
+        k ← k · 2 + bits[i]
+    fin para
+    regresa t[k + 1]
+fin función
+
+# --- pruebas ---
+afirma xor(1, 1) = 0
+afirma nand(1, 1) = 0
+afirma nor(0, 0) = 1
+afirma minterminos([0, 1, 1, 0], 2) = [1, 2]           # XOR de 2 variables
+afirma equivalentes([0, 1, 1, 0], [0, 1, 1, 0], 2) = 1
+afirma minterminos([0,0,0,1,0,1,1,1], 3) = [3, 5, 6, 7] # mayoría: c = ∑m(3,5,6,7)
+afirma evalua([0,0,0,1,0,1,1,1], [1, 1, 0], 3) = 1</code></pre>
+<h3 id="cadenas.nemi">22.6 <code>cadenas.nemi</code></h3>
+<p>Requiere las primitivas de cadena: <code>long(s)</code>, indexación
+<code>s[i]</code> (base 1, devuelve un carácter = cadena de longitud 1),
+<code>concatena(s, t)</code>, <code>texto(x)</code> (número → cadena) y
+<code>valor(c)</code> (carácter dígito → entero).</p>
+<pre><code># cadenas.nemi — Unidades 1–2
+
+función invierte(s)
+    r ← &quot;&quot;
+    para i ← 1 hasta long(s)
+        r ← concatena(r, s[long(s) − i + 1])
+    fin para
+    regresa r
+fin función
+
+función prefijo(s, k)                  # primeros k caracteres
+    r ← &quot;&quot;
+    para i ← 1 hasta k
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función sufijo(s, k)                   # últimos k caracteres
+    r ← &quot;&quot;
+    para i ← long(s) − k + 1 hasta long(s)
+        r ← concatena(r, s[i])
+    fin para
+    regresa r
+fin función
+
+función a_binario(n)                   # entero ≥ 0 → cadena binaria
+    si n = 0
+        regresa &quot;0&quot;
+    fin si
+    r ← &quot;&quot;
+    mientras n &gt; 0
+        r ← concatena(texto(n mod 2), r)
+        n ← ⌊n / 2⌋
+    fin mientras
+    regresa r
+fin función
+
+función desde_base(s, b)               # cadena de dígitos en base b → entero
+    v ← 0
+    para i ← 1 hasta long(s)
+        v ← v · b + valor(s[i])
+    fin para
+    regresa v
+fin función
+
+# --- pruebas ---
+afirma invierte(&quot;abc&quot;) = &quot;cba&quot;
+afirma prefijo(&quot;discreta&quot;, 4) = &quot;disc&quot;
+afirma sufijo(&quot;discreta&quot;, 3) = &quot;eta&quot;
+afirma a_binario(13) = &quot;1101&quot;
+afirma desde_base(&quot;1101&quot;, 2) = 13</code></pre>
+<hr />
+<h2 id="casos-límite-adicionales-biblioteca-y-extensiones">23. Casos
+límite adicionales (biblioteca y extensiones)</h2>
+<p>Complementan §16.</p>
+<ul>
+<li><strong><code>afirma</code> falso:</strong> abortar con archivo,
+línea, texto de la expresión y mensaje.</li>
+<li><strong><code>agrega</code> sobre algo que no es lista ni
+conjunto:</strong> error de tipo.</li>
+<li><strong><code>∈</code>, <code>union</code>, <code>⊆</code>, etc. con
+un operando que no es conjunto:</strong> error de tipo.</li>
+<li><strong>Igualdad entre tipos distintos</strong> (p. ej. lista
+<code>=</code> conjunto): resultado <code>0</code> (no error), salvo que
+se prefiera error; <strong>fijar y documentar</strong> la elección.</li>
+<li><strong>Iterar (<code>para cada</code>) y mutar</strong> la misma
+colección: comportamiento no definido; la biblioteca lo evita acumulando
+en otra colección (véase <code>potencia</code>).</li>
+<li><strong><code>copia</code> superficial vs. profunda:</strong>
+<code>copia</code> es <strong>profunda</strong>; sin ella, guardar
+<code>s</code> en una lista y seguir mutando <code>s</code> corrompería
+lo guardado.</li>
+<li><strong>Orden canónico</strong> de conjuntos con elementos
+heterogéneos: debe ser total y determinista (§20.2), aunque la elección
+concreta es libre.</li>
+<li><strong><code>mod_inv</code> sin inverso</strong>
+(<code>mcd(a,m) ≠ 1</code>): devuelve <code>−1</code> (convención de la
+biblioteca), no error.</li>
+</ul>
+<hr />
+<h3 id="resumen-para-el-siguiente-implementador">Resumen para el
+siguiente implementador</h3>
+<p>El artefacto de partida es esta especificación de
+<strong>Nemi</strong>. Tareas: (1) implementar el lexer y parser de la
+<strong>sintaxis UTF-8</strong> de la Parte II (gramática §10); (2)
+respetar las decisiones de §8 (asignación <code>←</code> vs. igualdad
+<code>=</code>, bloques con <code>fin</code>, base 1, bignum, paso por
+referencia de arreglos, <code>+</code>/<code>·</code> por tipo); (3)
+fijar el tratamiento de las <strong>acciones en prosa</strong> (§14);
+(4) validar con el <strong>corpus del §17</strong>, cuyas salidas ya
+están verificadas en las notas; y (5) implementar las
+<strong>extensiones del núcleo</strong> de §20–§21 (tipo
+<code>Conjunto</code>, listas dinámicas, <code>para cada</code>,
+igualdad estructural, <code>imprime</code>, <code>afirma</code>) y
+cargar la <strong>biblioteca estándar</strong> de §22, cuyas líneas
+<code>afirma</code> son su suite de aceptación.</p>
+<hr />
+<h2 id="historial-de-versiones">24. Historial de versiones</h2>
+<p>El documento se versiona con <code>mayor.menor</code>. Cambios
+incompatibles con implementaciones previas suben la versión
+<strong>menor</strong> hasta llegar a la 1.0 (primer intérprete que pase
+todo el corpus §17 <strong>y</strong> la biblioteca §22).</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Versión</th>
+<th>Alcance</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>0.1</strong></td>
+<td>Especificación inicial del núcleo: Parte I (guía de lectura) y Parte
+II §8–§18 (léxico, gramática EBNF, tipos, semántica,
+<code>incluye</code>, acciones en prosa, casos límite, corpus de prueba
+§17). Define la sintaxis concreta UTF-8, <code>←</code> vs
+<code>=</code>, bloques con <code>fin</code>, base 1, bignum, paso por
+referencia y polisemia <code>+</code>/<code>·</code>.</td>
+</tr>
+<tr>
+<td><strong>0.2</strong></td>
+<td><em>(esta versión)</em> Añade la <strong>biblioteca
+estándar</strong> y las extensiones que exige: §19 (arquitectura en dos
+capas y catálogo de módulos), §20 (literales de lista/conjunto, tipo
+<code>Conjunto</code>, <code>para cada</code>, listas dinámicas,
+igualdad estructural, retorno vía lista, funciones de primera clase
+[opcional]), §21 (<code>imprime</code> —resuelve §18.4—,
+<code>afirma</code>, <code>traza</code>), §22 (código fuente y pruebas
+de <code>teoria_numeros</code>, <code>conteo</code>,
+<code>conjuntos</code>, <code>relaciones</code>, <code>booleana</code>,
+<code>cadenas</code>) y §23 (casos límite de la biblioteca). No cambia
+nada de 0.1; solo agrega. <strong>Aclaraciones (rev. tras revisión del
+implementador):</strong> se resolvieron todas las preguntas abiertas de
+§18 (2/3/5 según el <code>README</code> del repo); §10 y §11 llevan
+ahora una nota que remite a las extensiones de §20 (antes §20 decía «se
+añaden a §10/§11» sin que esas secciones lo reflejaran); y se documentó
+el <strong>doble uso del glifo <code>∅</code></strong> (literal de
+conjunto vacío en entrada vs. «sin valor» en la salida de
+<code>imprime</code>), decisión: aceptarlo y advertirlo (§20.1, fila
+nueva en §21.1). <strong>Aclaración adicional (rev. tras
+implementación):</strong> <code>∈</code> gana la palabra
+<strong><code>en</code></strong> como equivalente ASCII directo
+(<code>x en A</code>), reutilizando sin ambigüedad la palabra clave de
+<code>para cada … en …</code> (§20.3); ver §20.2.</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>

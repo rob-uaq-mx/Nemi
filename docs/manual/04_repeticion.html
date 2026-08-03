@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="repetición">4. Repetición</h1>
+<h2 id="para-repetir-un-número-conocido-de-veces"><code>para</code>:
+repetir un número conocido de veces</h2>
+<pre><code>para i ← 1 hasta 5
+    imprime(i)
+fin para</code></pre>
+<pre class="console"><code>1
+2
+3
+4
+5</code></pre>
+<p><code>para VARIABLE ← INICIO hasta FIN</code> crea una variable (aquí
+<code>i</code>) que empieza en <code>INICIO</code>, ejecuta el bloque,
+le suma 1, lo vuelve a ejecutar, y así hasta que <code>VARIABLE</code>
+pase de <code>FIN</code> (incluye el <code>FIN</code>: el ejemplo de
+arriba sí imprime el 5). Usa <code>para</code> cuando <strong>sabes de
+antemano</strong> cuántas vueltas vas a dar — por ejemplo, “para cada
+número del 1 al 10”.</p>
+<h3 id="acumular-un-resultado">Acumular un resultado</h3>
+<p>El patrón más común: una variable que empieza en un valor “neutro” (0
+para sumar, 1 para multiplicar) y se va actualizando en cada vuelta.</p>
+<pre><code>suma ← 0
+para i ← 1 hasta 10
+    suma ← suma + i
+fin para
+imprime(&quot;La suma de 1 a 10 es&quot;, suma)</code></pre>
+<pre class="console"><code>La suma de 1 a 10 es 55</code></pre>
+<p>Esto es exactamente la idea de una sumatoria <code>∑</code> que ves
+en clase — <code>para</code> es cómo se ejecuta una sumatoria paso a
+paso en vez de solo escribirla.</p>
+<h2 id="mientras-repetir-mientras-algo-sea-cierto"><code>mientras</code>:
+repetir mientras algo sea cierto</h2>
+<p>Cuando <strong>no</strong> sabes de antemano cuántas vueltas vas a
+necesitar (depende del resultado de cada paso), usas
+<code>mientras</code>:</p>
+<pre><code>n ← 20
+pasos ← 0
+mientras n ≠ 1
+    si n mod 2 = 0
+        n ← ⌊n / 2⌋
+    alt
+        n ← 3 · n + 1
+    fin si
+    pasos ← pasos + 1
+fin mientras
+imprime(&quot;Se tardó&quot;, pasos, &quot;pasos&quot;)</code></pre>
+<pre class="console"><code>Se tardó 7 pasos</code></pre>
+<p>Este es el proceso de Collatz: si el número es par, divídelo entre 2;
+si es impar, multiplícalo por 3 y súmale 1; repite hasta llegar a 1.
+Nadie sabe de antemano cuántos pasos va a tardar un número dado (es un
+problema abierto de matemáticas) — por eso <code>mientras</code>, y no
+<code>para</code>, es la herramienta correcta aquí.</p>
+<p><code>mientras CONDICIÓN ... fin mientras</code> revisa la condición
+<strong>antes</strong> de cada vuelta (incluida la primera): si nunca es
+cierta, el bloque nunca se ejecuta ni una vez; si nunca deja de ser
+cierta, el programa nunca termina (un “ciclo infinito” — le va a pasar a
+todo mundo alguna vez, y la señal es que tu programa no responde; hay
+que interrumpirlo y revisar la condición).</p>
+<h2 id="un-tropiezo-casi-garantizado-no-te-regresa-un-entero">Un
+tropiezo casi garantizado: <code>/</code> no te regresa un entero</h2>
+<p>Fíjate que arriba usamos <code>⌊n / 2⌋</code> (<strong>piso</strong>
+de <code>n / 2</code>), no <code>n / 2</code> a secas. Recuerda del
+capítulo 2: <code>/</code> siempre te da el resultado
+<strong>exacto</strong>, que Nemi guarda como fracción aunque se imprima
+como si fuera un entero. Si luego intentas usar <code>mod</code> sobre
+ese resultado, truena:</p>
+<pre><code>n ← 20 / 2
+imprime(n)          # se ve como &quot;10&quot;...
+imprime(n mod 2)     # ...pero esto falla: el operador &#39;mod&#39; requiere enteros</code></pre>
+<p><code>n</code> <strong>se imprime</strong> como <code>10</code>, pero
+por dentro sigue siendo “la fracción exacta 10/1”, no un entero — y
+<code>mod</code> exige enteros de verdad. <code>⌊ ⌋</code> (piso) sí te
+regresa un entero genuino, listo para volver a usarse con
+<code>mod</code>, como índice de un arreglo (capítulo 6), etc. Regla
+práctica: si vas a seguir haciendo aritmética entera con un resultado de
+<code>/</code>, envuélvelo en <code>⌊ ⌋</code>.</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Con <code>para</code>, calcula el producto de los números del 1 al 6
+(esto es <code>6!</code>, pero calcúlalo con el ciclo, no con una
+función todavía — esas vienen en el capítulo 5).</li>
+<li>Con <code>mientras</code>, cuenta cuántas veces puedes dividir 100
+entre 2 antes de que deje de ser divisible exactamente (usa
+<code>mod</code> para checar, y <code>⌊ ⌋</code> para dividir).</li>
+<li>Modifica el ejemplo de Collatz para que además imprima cada valor de
+<code>n</code> por el que pasa (no solo el conteo final).</li>
+<li>¿Qué pasa si escribes <code>mientras 1 = 2</code> seguido de una
+instrucción y <code>fin mientras</code>? ¿Y si escribes
+<code>mientras 1 = 1</code>? No corras el segundo caso sin pensarlo
+primero — ¿por qué sería un problema?</li>
+</ol>
+<p>Siguiente: <a href="05_funciones.html"><strong>Capítulo 5 —
+Funciones</strong></a></p>
+</body>
+</html>

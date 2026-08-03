@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="la-biblioteca-común">10. La biblioteca común</h1>
+<h2 id="incluye-traer-código-de-otro-archivo"><code>incluye</code>:
+traer código de otro archivo</h2>
+<p>Ya escribiste <code>mcd</code> (capítulo 8), <code>factorial</code>
+(capítulo 5), y varias funciones más — todas del tipo que
+<strong>cualquier</strong> curso de matemáticas discretas repite
+constantemente. La instrucción <code>incluye &quot;ruta.nemi&quot;</code> te deja
+usar funciones que ya viven en otro archivo, sin copiarlas:</p>
+<pre><code>incluye &quot;bibcom/teoria_numeros.nemi&quot;
+
+imprime(mcd(504, 396))
+imprime(primo(97))</code></pre>
+<pre class="console"><code>36
+1</code></pre>
+<p><code>incluye</code> pega el contenido del archivo indicado justo en
+ese punto — como si hubieras copiado y pegado
+<code>teoria_numeros.nemi</code> completo ahí, pero sin tener que
+hacerlo tú, y sin arriesgarte a copiar mal una línea. La ruta es
+relativa a <strong>dónde está tu propio archivo</strong>: el ejemplo de
+arriba funciona si tu archivo vive junto a la carpeta
+<code>bibcom/</code> (como en este repositorio, donde tu archivo estaría
+en la raíz o en <code>examples/</code>, junto a
+<code>bibcom/</code>).</p>
+<p>Si tu archivo vive en <strong>otra</strong> carpeta (por ejemplo,
+guardaste tus tareas en <code>Documentos\</code>, lejos de este
+repositorio) y no quieres copiar <code>bibcom/</code> ahí, la opción
+<code>-I</code> le dice al intérprete dónde más buscar:</p>
+<pre class="console"><code>nemi mi_tarea.nemi -I ruta/a/bibcom</code></pre>
+<p><code>-I</code> se prueba <strong>después</strong> de la carpeta de
+tu propio archivo, así que nunca cambia nada de lo que ya funciona —
+solo agrega un lugar más donde buscar.</p>
+<h2 id="bibcom-seis-módulos-ya-escritos-y-comprobados"><code>bibcom/</code>:
+seis módulos ya escritos y comprobados</h2>
+<p>En vez de reescribir <code>mcd</code>, <code>factorial</code>,
+<code>C(n, r)</code> (combinaciones), o las propiedades de una relación
+(reflexiva, simétrica, transitiva) cada vez que las necesitas,
+<code>bibcom/</code> ya las trae — y cada una viene con sus propios
+<code>afirma</code> (capítulo 8) como prueba de que están bien:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Archivo</th>
+<th>Unidad</th>
+<th>Trae</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>teoria_numeros.nemi</code></td>
+<td>2</td>
+<td><code>mcd</code>, <code>mcm</code>, <code>primo</code>,
+<code>exp_mod</code>, <code>euclides_extendido</code>,
+<code>mod_inv</code></td>
+</tr>
+<tr>
+<td><code>conteo.nemi</code></td>
+<td>3</td>
+<td><code>factorial</code>, <code>P</code>, <code>C</code>,
+<code>pascal</code>, <code>multinomial</code>, generadores de
+combinaciones/permutaciones</td>
+</tr>
+<tr>
+<td><code>conjuntos.nemi</code></td>
+<td>1</td>
+<td><code>complemento</code>, <code>subconjunto_propio</code>,
+<code>potencia</code>, <code>producto_cartesiano</code></td>
+</tr>
+<tr>
+<td><code>relaciones.nemi</code></td>
+<td>1</td>
+<td><code>es_refleja</code>, <code>es_simetrica</code>,
+<code>es_transitiva</code>, <code>es_antisimetrica</code>,
+<code>composicion</code>, <code>cerradura_transitiva</code></td>
+</tr>
+<tr>
+<td><code>booleana.nemi</code></td>
+<td>4</td>
+<td><code>nand</code>, <code>nor</code>, <code>xor</code>,
+<code>xnor</code>, <code>minterminos</code>, <code>equivalentes</code>,
+<code>evalua</code></td>
+</tr>
+<tr>
+<td><code>cadenas.nemi</code></td>
+<td>1–2</td>
+<td><code>invierte</code>, <code>prefijo</code>, <code>sufijo</code>,
+<code>a_binario</code>, <code>desde_base</code></td>
+</tr>
+</tbody>
+</table>
+<p>Tabla completa con firma, descripción y ejemplo de cada función: <a href="../bibcom/README.html"><strong><code>bibcom/README.md</code></strong></a>.</p>
+<p>Si necesitas varios módulos a la vez, <code>bibcom.nemi</code> los
+trae todos con un solo <code>incluye</code>:</p>
+<pre><code>incluye &quot;bibcom/bibcom.nemi&quot;
+
+imprime(C(52, 5))
+imprime(xor(1, 0))
+imprime(invierte(&quot;abc&quot;))</code></pre>
+<pre class="console"><code>2598960
+1
+cba</code></pre>
+<h2 id="cuándo-reescribir-y-cuándo-usar-bibcom">¿Cuándo reescribir y
+cuándo usar <code>bibcom/</code>?</h2>
+<p>Para <strong>aprender</strong> cómo funciona un algoritmo (por
+ejemplo, entender el algoritmo de Euclides paso a paso), escríbelo tú
+mismo, con <code>traza</code> (capítulo 8) si hace falta — ese es el
+punto de los capítulos 1 al 9. Para <strong>usarlo</strong> dentro de
+algo más grande (necesitas <code>mcd</code> como un paso de otra
+función, o quieres confirmar el resultado de tu tarea), usa
+<code>bibcom/</code> — ya está escrito, ya está comprobado, y
+reescribirlo solo introduce la posibilidad de un error nuevo en algo que
+ya existe correctamente.</p>
+<p>Los propios archivos de <code>bibcom/</code> son código corto y
+legible — ábrelos directamente si quieres ver cómo está resuelto un
+algoritmo en particular (son el mismo tipo de código que ya sabes leer
+después de este manual, no cajas negras).</p>
+<h2 id="ejercicios">Ejercicios</h2>
+<ol type="1">
+<li>Escribe un archivo <code>.nemi</code> que incluya
+<code>teoria_numeros.nemi</code> y calcule <code>mod_inv(3, 7)</code>
+(el inverso de 3 módulo 7) — confirma el resultado con
+<code>afirma</code> (capítulo 8) contra el valor de la tabla en <a href="../bibcom/README.html"><code>bibcom/README.md</code></a>.</li>
+<li>Usa <code>conteo.nemi</code> para calcular <code>C(10, 3)</code>
+(combinaciones de 3 elementos de un total de 10) y confirma a mano que
+el resultado tiene sentido (¿es mayor o menor que <code>C(10, 5)</code>?
+¿por qué?).</li>
+<li>Compara tu propia <code>función es_palindromo</code> del capítulo 9
+contra <code>invierte</code> de <code>cadenas.nemi</code>: escribe una
+versión de <code>es_palindromo</code> que use <code>invierte(s)</code> y
+compare con <code>s</code> directamente, en vez de recorrer carácter por
+carácter. ¿Cuál versión entiendes más rápido al releerla?</li>
+<li>Abre <code>bibcom/relaciones.nemi</code> tú mismo y busca
+<code>cerradura_transitiva</code> — ¿reconoces el algoritmo de Warshall
+que se menciona en el comentario?</li>
+</ol>
+<p>Siguiente: <a href="referencia_rapida.html"><strong>Referencia
+rápida</strong></a> — o, si ya terminaste los diez capítulos, vuelve
+cuando quieras: la <a href="../Nemi.html">especificación completa</a>
+tiene todavía más detalle del que cubrimos aquí.</p>
+</body>
+</html>
