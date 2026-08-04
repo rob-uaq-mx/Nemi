@@ -116,6 +116,14 @@ afuera. Es la manera más directa de confirmar que entendiste correctamente
 cómo se desenvuelve una recursión, en vez de solo confiar en que el
 resultado final salió bien.
 
+## Probar cosas sueltas, sin escribir un archivo
+
+Todo lo de arriba asume que la comprobación queda escrita en tu archivo con
+`afirma`. Pero a veces solo quieres probar algo rápido — un valor, una
+llamada — sin agregarlo permanentemente. Si usas **WinNemi**, la consola de
+abajo también funciona como modo interactivo para justo eso: ver el
+[**Apéndice: WinNemi**](apendice_winnemi.md#la-consola-como-modo-interactivo).
+
 ## Ejercicios
 
 1. Toma la función `suma_hasta` que escribiste en el capítulo 5 y agrégale

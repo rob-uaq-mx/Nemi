@@ -34,14 +34,16 @@ DOCS_DIR = REPO_ROOT / "docs"
 CSS_PATH = HERE / "manual.css"
 
 # Every cross-link in this closed set is a relative ".md" link (with or
-# without a leading "../"); every target is one of the three sources being
-# converted, so it's always safe to rewrite to ".html".
-MD_LINK = re.compile(r'\]\(((?:\.\./)*[\w./-]+)\.md\)')
+# without a leading "../", and with or without a "#heading-anchor" fragment,
+# e.g. "apendice_winnemi.md#la-consola-como-modo-interactivo"); every target
+# is one of the three sources being converted, so it's always safe to
+# rewrite to ".html".
+MD_LINK = re.compile(r'\]\(((?:\.\./)*[\w./-]+)\.md(#[\w-]+)?\)')
 
 
 def convert(md_path: Path, out_path: Path) -> None:
     source = md_path.read_text(encoding="utf-8")
-    source = MD_LINK.sub(r"](\1.html)", source)
+    source = MD_LINK.sub(r"](\1.html\2)", source)
 
     # No --metadata title: pandoc's html5 template renders a *visible*
     # "<h1 class="title">" for an explicit title, which would duplicate the

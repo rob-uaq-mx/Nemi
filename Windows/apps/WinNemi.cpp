@@ -610,6 +610,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             RunCurrentBuffer(state);
             return 0;
 
+        case IDM_RESET_SESSION:
+            // Only the console's scratch variables -- state->interp (the
+            // functions/procedures loaded from the buffer) is untouched, so
+            // this is lighter than re-running the whole file (F5).
+            state->session = nemi::Environment();
+            CmdLnPrintf(state->hCmdLine, "Sesión reiniciada.\r\n");
+            return 0;
+
         case IDM_INCLUDE_PATHS: {
             std::vector<std::wstring> dirs = WinNemiStateLoadIncludeDirs();
             if (WinNemiIncludeDlgShow(state->hInst, hwnd, dirs))

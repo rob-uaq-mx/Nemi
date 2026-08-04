@@ -55,9 +55,10 @@ WinNemi MENU
           }
      POPUP "&Ejecutar"
           {
-          MENUITEM "&Ejecutar archivo\tF5",   IDM_RUN
+          MENUITEM "&Ejecutar archivo\tF5",           IDM_RUN
+          MENUITEM "&Reiniciar sesión\tCtrl+Shift+F5", IDM_RESET_SESSION
           MENUITEM SEPARATOR
-          MENUITEM "&Rutas de inclusión...",  IDM_INCLUDE_PATHS
+          MENUITEM "&Rutas de inclusión...",           IDM_INCLUDE_PATHS
           }
      POPUP "Ay&uda"
           {
@@ -73,6 +74,7 @@ WinNemi ACCELERATORS
      "^S",        IDM_SAVE
      "^P",        IDM_PRINT
      VK_F5,       IDM_RUN,   VIRTKEY
+     VK_F5,       IDM_RESET_SESSION, VIRTKEY, CONTROL, SHIFT
      "^Z",        IDM_UNDO
      VK_BACK,     IDM_UNDO,  VIRTKEY, ALT
      "^X",        IDM_CUT

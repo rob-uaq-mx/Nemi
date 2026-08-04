@@ -48,7 +48,11 @@ de que el conocimiento se quede.
 
 Y para cuando ya sepas todo esto y solo necesites recordar la sintaxis:
 [**Referencia rápida**](referencia_rapida.md) — todo en tablas, sin
-explicaciones.
+explicaciones. Si usas **WinNemi**, hay además un
+[**Apéndice: WinNemi**](apendice_winnemi.md) con lo que agrega el editor
+(la consola como modo interactivo, barra de símbolos, rutas de inclusión)
+— no hace falta para aprender el lenguaje, solo para sacarle provecho a la
+herramienta.
 
 ## Una nota sobre cómo aprender con Nemi
 

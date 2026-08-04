@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>-</title>
+  <style>
+
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">
+body {
+max-width: 46em;
+margin: 2em auto;
+padding: 0 1.5em;
+font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+line-height: 1.55;
+color: #202020;
+}
+h1, h2, h3 {
+line-height: 1.25;
+}
+h1 {
+border-bottom: 2px solid #ddd;
+padding-bottom: 0.3em;
+}
+h2 {
+border-bottom: 1px solid #eee;
+padding-bottom: 0.2em;
+}
+code {
+font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+background: #f4f4f4;
+padding: 0.1em 0.3em;
+border-radius: 3px;
+}
+pre {
+background: #f4f4f4;
+padding: 0.8em 1em;
+overflow-x: auto;
+border-radius: 5px;
+}
+pre code {
+background: none;
+padding: 0;
+}
+table {
+border-collapse: collapse;
+margin: 1em 0;
+width: 100%;
+}
+th, td {
+border: 1px solid #ccc;
+padding: 0.4em 0.6em;
+text-align: left;
+}
+th {
+background: #f0f0f0;
+}
+blockquote {
+border-left: 3px solid #ccc;
+margin-left: 0;
+padding-left: 1em;
+color: #555;
+}
+a {
+color: #1a5fb4;
+}
+</style>
+</head>
+<body>
+<h1 id="apéndice-winnemi">Apéndice: WinNemi</h1>
+<p>Este apéndice es solo para quien usa <strong>WinNemi</strong> (el
+editor de Windows). El resto del manual no depende de nada de esto —
+cualquier ejemplo funciona igual con <code>python -m nemi</code> o con
+WinNemi. Aquí está lo que WinNemi agrega <em>además</em> del lenguaje:
+su editor, su consola interactiva, y sus atajos.</p>
+<h2 id="el-editor-y-ejecutar">El editor y “Ejecutar”</h2>
+<p>WinNemi es un editor de texto (como el Bloc de notas) con una consola
+integrada abajo. Escribes tu programa arriba y presionas
+<strong>Ejecutar → Ejecutar archivo</strong> (<strong>F5</strong>): esto
+carga todas las <code>función</code>/<code>procedimiento</code> que
+hayas escrito y corre el cuerpo del guion (las instrucciones sueltas,
+fuera de cualquier función), exactamente como
+<code>python -m nemi tu_archivo.nemi</code>. El resultado aparece en la
+consola de abajo.</p>
+<h2 id="la-consola-como-modo-interactivo">La consola como modo
+interactivo</h2>
+<p>La consola no es solo para ver la salida de tu <code>imprime</code> —
+también puedes <strong>escribirle</strong> directamente, en el prompt
+<code>nemi&gt;</code>. Ahí puedes probar una función suelta, revisar el
+valor de una variable, o experimentar con una expresión sin tener que
+agregarla a tu archivo:</p>
+<pre><code>nemi&gt; imprime(mcd(504, 396))
+36
+nemi&gt; x ← 3 en {1, 2, 3, 4}
+nemi&gt; imprime(x)
+verdadero</code></pre>
+<p>Dos cosas a tener presentes:</p>
+<ul>
+<li><strong>La consola necesita que hayas ejecutado el archivo al menos
+una vez</strong> (F5) antes de aceptar líneas — es lo que le da las
+funciones que puedes llamar. Si escribes algo antes, te lo recuerda: “No
+hay ningún archivo ejecutado. Use Ejecutar &gt; Ejecutar archivo
+(F5).”</li>
+<li>Las variables que defines en la consola (como <code>x</code> arriba)
+<strong>persisten entre líneas</strong> — es tu “sesión” de prueba,
+separada del archivo. Volver a presionar F5 recarga el archivo
+<strong>y</strong> borra esa sesión, empezando de cero.</li>
+</ul>
+<p>Si solo quieres limpiar las variables sueltas que acumulaste probando
+cosas — sin perder las funciones que ya cargaste ni tener que releer el
+archivo — usa <strong>Ejecutar → Reiniciar sesión</strong>
+(<strong>Ctrl+Mayús+F5</strong>) en vez de F5:</p>
+<pre><code>nemi&gt; x ← 99
+nemi&gt; imprime(mcd(504, 396))
+36</code></pre>
+<p><em>(Ejecutar → Reiniciar sesión)</em></p>
+<pre><code>Sesión reiniciada.
+nemi&gt; imprime(x)
+nemi: variable no definida: x
+nemi&gt; imprime(mcd(504, 396))
+36</code></pre>
+<p><code>x</code> desapareció, pero <code>mcd</code> (que viene del
+archivo, no de la consola) sigue funcionando — “Reiniciar sesión” es más
+ligero que F5 precisamente por eso.</p>
+<h2 id="barra-de-símbolos">Barra de símbolos</h2>
+<p>Escribir <code>∈</code>, <code>≤</code>, <code>⌊ ⌋</code> y demás
+símbolos de Nemi con el teclado puede ser incómodo. La barra de símbolos
+(el segundo renglón de íconos, arriba del editor) inserta cualquiera de
+ellos con un clic, en la posición donde esté el cursor — incluidos los
+pares como <code>⌊⌋</code>/<code>⌈⌉</code>, que se insertan completos
+con el cursor ya en medio, listo para escribir lo que va adentro.</p>
+<h2 id="rutas-de-inclusión">Rutas de inclusión</h2>
+<p><code>incluye &quot;archivo.nemi&quot;</code> (capítulo 10) busca el archivo
+junto al tuyo por defecto. WinNemi además:</p>
+<ul>
+<li>Encuentra solo la carpeta <code>bibcom/</code> si está junto al
+propio <code>WinNemi.exe</code> (así viene si lo instalaste) — no
+necesitas hacer nada para usar la <a href="10_biblioteca_comun.html">biblioteca común</a>.</li>
+<li>Te deja agregar tus propias carpetas desde <strong>Ejecutar → Rutas
+de inclusión…</strong> — útil si vas armando tu propia colección de
+funciones reutilizables en otra carpeta.</li>
+</ul>
+<h2 id="ayuda">Ayuda</h2>
+<p>El menú <strong>Ayuda</strong> abre este mismo manual en tu
+navegador.</p>
+<p>Siguiente: <a href="referencia_rapida.html"><strong>Referencia
+rápida</strong></a> — o vuelve al <a href="00_indice.html"><strong>índice</strong></a>.</p>
+</body>
+</html>

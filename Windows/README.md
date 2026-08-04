@@ -70,6 +70,13 @@ diálogo para agregar o quitar carpetas propias (persisten en `WinNemi.ini`,
 junto al `.exe`) — útil para que un estudiante tenga su propia biblioteca de
 funciones reutilizables.
 
+La consola solo acepta líneas después de correr el archivo al menos una vez
+(**Ejecutar → Ejecutar archivo**, F5) — es lo que carga el intérprete con
+las funciones/procedimientos del buffer. **Ejecutar → Reiniciar sesión**
+(Ctrl+Mayús+F5) limpia solo las variables sueltas que hayas escrito en la
+consola, sin recargar el archivo ni perder esas funciones — más ligero que
+volver a pulsar F5 cuando solo quieres una consola limpia.
+
 El menú **Ayuda** abre el [manual](../manual/00_indice.md) (`manual/*.md`,
 `Nemi.md` y `bibcom/README.md` convertidos a HTML con `pandoc` en
 [`../docs/`](../docs/) — ver [`devtools/README.md`](devtools/README.md)) en

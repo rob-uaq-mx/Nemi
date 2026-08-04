@@ -43,6 +43,10 @@
 // New: opens the "Rutas de inclusión" dialog (WinNemiIncludeDlg.cpp).
 #define IDM_INCLUDE_PATHS 65
 
+// New: clears the console's session variables (state->session) without
+// touching state->interp -- lighter than re-running the whole buffer (F5).
+#define IDM_RESET_SESSION 66
+
 // New: one command ID per button of the symbol toolbar (WinNemiSymbols.cpp),
 // sequential from IDM_SYM_FIRST -- WndProc's WM_COMMAND handler recognizes
 // the whole range with a single bounds check instead of one case per symbol
