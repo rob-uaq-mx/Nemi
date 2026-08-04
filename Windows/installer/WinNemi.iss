@@ -11,7 +11,7 @@
 ; needed, so it works on locked-down lab/classroom machines.
 
 #define MyAppName "WinNemi"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.3.0"
 #define MyAppPublisher "Proyecto Nemi"
 #define MyAppExeName "WinNemi.exe"
 #define RepoRoot "..\..\"
