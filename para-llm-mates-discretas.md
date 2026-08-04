@@ -41,8 +41,8 @@ verificada línea por línea contra la spec (cada módulo trae sus propios
 una vez; o `incluye "teoria_numeros.nemi"` si solo necesitas uno.
 
 También desde v0.2, el lenguaje tiene el tipo `Conjunto` de verdad
-(`{1, 2, 3}`, `∈`/`⊆`/`⊂` como operadores de verdad, `union(A, B)`/
-`interseccion(A, B)`/`diferencia(A, B)` como funciones —
+(`{1, 2, 3}`, `∈`/`⊆`/`⊂` como operadores de verdad, `unión(A, B)`/
+`intersección(A, B)`/`diferencia(A, B)` como funciones —
 **ojo: `∪`/`∩`/`∖` son solo la notación matemática que usa la spec para
 describirlas en prosa, no sintaxis Nemi válida; en código siempre son
 llamadas a función**, `para cada x en A repite ... fin para`) — útil si tus

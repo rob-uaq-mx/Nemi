@@ -248,6 +248,8 @@ int main() {
             "función anidado() regresa {1, 2} \xE2\x88\x88 {{1, 2}, {3, 4}} fin función\n"
             "función u() regresa union({1,2}, {2,3}) fin función\n"
             "función i() regresa interseccion({1,2,3}, {2,3,4}) fin función\n"
+            "función u2() regresa unión({1,2}, {2,3}) fin función\n"
+            "función i2() regresa intersección({1,2,3}, {2,3,4}) fin función\n"
             "función d() regresa diferencia({1,2,3}, {2}) fin función\n"
             "función c() regresa cardinalidad({1,2,3}) fin función\n"
             "función p() regresa pertenece(2, {1,2,3}) fin función\n"
@@ -278,6 +280,10 @@ int main() {
         h.check("nested conjunto membership", ccall("anidado"), "verdadero");
         h.check("union({1,2},{2,3})", ccall("u"), "{1, 2, 3}");
         h.check("interseccion({1,2,3},{2,3,4})", ccall("i"), "{2, 3}");
+        // unión/intersección (with the required accent) are aliases of the
+        // same primitives -- union/interseccion (unaccented) keep working.
+        h.check("unión({1,2},{2,3})", ccall("u2"), "{1, 2, 3}");
+        h.check("intersección({1,2,3},{2,3,4})", ccall("i2"), "{2, 3}");
         h.check("diferencia({1,2,3},{2})", ccall("d"), "{1, 3}");
         h.check("cardinalidad({1,2,3})", ccall("c"), "3");
         h.check("pertenece(2, {1,2,3})", ccall("p"), "verdadero");

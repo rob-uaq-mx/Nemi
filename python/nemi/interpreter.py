@@ -698,16 +698,16 @@ def _prim_subconjunto(interp, args):
 
 
 def _prim_union(interp, args):
-    _arity("union", args, 2)
-    a = _require_set("union", args[0])
-    b = _require_set("union", args[1])
+    _arity("unión", args, 2)
+    a = _require_set("unión", args[0])
+    b = _require_set("unión", args[1])
     return a.union(b)
 
 
 def _prim_interseccion(interp, args):
-    _arity("interseccion", args, 2)
-    a = _require_set("interseccion", args[0])
-    b = _require_set("interseccion", args[1])
+    _arity("intersección", args, 2)
+    a = _require_set("intersección", args[0])
+    b = _require_set("intersección", args[1])
     return a.intersection(b)
 
 
@@ -795,7 +795,9 @@ _PRIMITIVES = {
     "imprime": _prim_print,
     "pertenece": _prim_pertenece,
     "subconjunto": _prim_subconjunto,
+    "unión": _prim_union,
     "union": _prim_union,
+    "intersección": _prim_interseccion,
     "interseccion": _prim_interseccion,
     "diferencia": _prim_diferencia,
     "cardinalidad": _prim_cardinalidad,

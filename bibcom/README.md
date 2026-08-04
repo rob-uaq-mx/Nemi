@@ -65,7 +65,7 @@ $ python -m nemi ../bibcom/teoria_numeros.nemi --llama "mcd(504, 396)"
 ## `conjuntos.nemi` (Unidad 1)
 
 Sobre el tipo `Conjunto` del núcleo (`Nemi.md` §20.2) — ver también
-`pertenece`/`subconjunto`/`union`/`interseccion`/`diferencia`/`cardinalidad`,
+`pertenece`/`subconjunto`/`unión`/`intersección`/`diferencia`/`cardinalidad`,
 que son primitivas del intérprete, no de este archivo.
 
 | Función | Qué hace | Ejemplo | Resultado |

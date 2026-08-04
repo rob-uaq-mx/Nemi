@@ -649,8 +649,8 @@ tabla de §11). Operaciones primitivas:
 | `x ∈ A` | bit `1`/`0` (pertenencia). También `x ∉ A`. Alternativas para `∈`: la palabra **`en`** (`x en A`) o la función `pertenece(x, A)` — ver nota siguiente |
 | `A ⊆ B` | bit (subconjunto). Alias: `subconjunto(A, B)` |
 | `A ⊂ B` | bit (subconjunto propio) |
-| `union(A, B)` | `A ∪ B` |
-| `interseccion(A, B)` | `A ∩ B` |
+| `unión(A, B)` | `A ∪ B` |
+| `intersección(A, B)` | `A ∩ B` |
 | `diferencia(A, B)` | `A ∖ B` |
 | `cardinalidad(A)` | número de elementos (entero). También `long(A)` |
 | `agrega(A, x)` | inserta `x` en `A` **in situ** (idempotente: si ya está, no cambia); muta por referencia, sin valor útil de retorno |
@@ -666,7 +666,7 @@ misma gramática sin conflicto. Los demás operadores de conjunto no tienen
 palabra equivalente: para `∉ ⊆ ⊂`, sin teclado Unicode, se usan las funciones
 `pertenece` y `subconjunto` (`∉` también se obtiene negando: `¬pertenece(x, A)`).
 (Las operaciones binarias `∪ ∩ ∖` se ofrecen como **funciones**, no
-operadores, para no ampliar la precedencia; `union`, `interseccion`,
+operadores, para no ampliar la precedencia; `unión`, `intersección`,
 `diferencia`.)
 
 **Igualdad estructural [REQ].** `=` y `≠` operan por **valor** sobre datos
@@ -1016,7 +1016,7 @@ función potencia(A)                    # conjunto potencia P(A)
     para cada x en A repite
         nuevos ← ∅                     # se acumula aparte para no mutar 'res' al iterar
         para cada S en res repite
-            agrega(nuevos, union(S, {x}))
+            agrega(nuevos, unión(S, {x}))
         fin para
         para cada T en nuevos repite
             agrega(res, T)
@@ -1038,7 +1038,7 @@ fin función
 # --- pruebas ---
 afirma cardinalidad({3, 1, 2, 1}) = 3
 afirma (2 ∈ {1, 2, 3}) = 1
-afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma unión({1, 2}, {2, 3}) = {1, 2, 3}
 afirma cardinalidad(potencia({1, 2, 3})) = 8
 afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6
 ```
@@ -1262,7 +1262,7 @@ Complementan §16.
 
 - **`afirma` falso:** abortar con archivo, línea, texto de la expresión y mensaje.
 - **`agrega` sobre algo que no es lista ni conjunto:** error de tipo.
-- **`∈`, `union`, `⊆`, etc. con un operando que no es conjunto:** error de tipo.
+- **`∈`, `unión`, `⊆`, etc. con un operando que no es conjunto:** error de tipo.
 - **Igualdad entre tipos distintos** (p. ej. lista `=` conjunto): resultado `0`
   (no error), salvo que se prefiera error; **fijar y documentar** la elección.
 - **Iterar (`para cada`) y mutar** la misma colección: comportamiento no definido;

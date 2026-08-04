@@ -388,14 +388,14 @@ Value prim_subconjunto(const std::vector<Value>& args) {
     return require_set("subconjunto", args[0])->is_subset(*require_set("subconjunto", args[1]));
 }
 Value prim_union(const std::vector<Value>& args) {
-    check_arity("union", args, 2);
+    check_arity("unión", args, 2);
     return std::make_shared<Conjunto>(
-        require_set("union", args[0])->set_union(*require_set("union", args[1])));
+        require_set("unión", args[0])->set_union(*require_set("unión", args[1])));
 }
 Value prim_interseccion(const std::vector<Value>& args) {
-    check_arity("interseccion", args, 2);
+    check_arity("intersección", args, 2);
     return std::make_shared<Conjunto>(
-        require_set("interseccion", args[0])->intersection(*require_set("interseccion", args[1])));
+        require_set("intersección", args[0])->intersection(*require_set("intersección", args[1])));
 }
 Value prim_diferencia(const std::vector<Value>& args) {
     check_arity("diferencia", args, 2);
@@ -498,7 +498,9 @@ const std::unordered_map<std::string, PrimitiveFn>& primitives() {
         {"imprime", prim_print},
         {"pertenece", prim_pertenece},
         {"subconjunto", prim_subconjunto},
+        {"unión", prim_union},
         {"union", prim_union},
+        {"intersección", prim_interseccion},
         {"interseccion", prim_interseccion},
         {"diferencia", prim_diferencia},
         {"cardinalidad", prim_cardinalidad},

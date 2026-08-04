@@ -318,6 +318,8 @@ fin función
         "función p() regresa pertenece(2, {1,2,3}) fin función\n"
         "función s() regresa subconjunto({1,2}, {1,2,3}) fin función\n"
         "función l() regresa long({1,2,3}) fin función\n"
+        "función u2() regresa unión({1,2}, {2,3}) fin función\n"
+        "función i2() regresa intersección({1,2,3}, {2,3,4}) fin función\n"
     )
     r.check("union({1,2},{2,3})", to_python(prim_interp.call("u", [])), [1, 2, 3])
     r.check("interseccion({1,2,3},{2,3,4})", to_python(prim_interp.call("i", [])), [2, 3])
@@ -326,6 +328,10 @@ fin función
     r.check("pertenece(2, {1,2,3})", prim_interp.call("p", []), True)
     r.check("subconjunto({1,2}, {1,2,3})", prim_interp.call("s", []), True)
     r.check("long extended to conjunto", prim_interp.call("l", []), 3)
+    # unión/intersección (with the required accent) are aliases of the same
+    # primitives -- union/interseccion (unaccented) keep working too.
+    r.check("unión({1,2},{2,3})", to_python(prim_interp.call("u2", [])), [1, 2, 3])
+    r.check("intersección({1,2,3},{2,3,4})", to_python(prim_interp.call("i2", [])), [2, 3])
 
     # -- extra: para cada ... en ... (v0.2 §20.3) ---------------------------
     print("extra: para cada (v0.2)")

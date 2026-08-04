@@ -936,11 +936,11 @@ primitivas:</p>
 <td>bit (subconjunto propio)</td>
 </tr>
 <tr>
-<td><code>union(A, B)</code></td>
+<td><code>unión(A, B)</code></td>
 <td><code>A ∪ B</code></td>
 </tr>
 <tr>
-<td><code>interseccion(A, B)</code></td>
+<td><code>intersección(A, B)</code></td>
 <td><code>A ∩ B</code></td>
 </tr>
 <tr>
@@ -976,7 +976,7 @@ operadores de conjunto no tienen palabra equivalente: para
 también se obtiene negando: <code>¬pertenece(x, A)</code>). (Las
 operaciones binarias <code>∪ ∩ ∖</code> se ofrecen como
 <strong>funciones</strong>, no operadores, para no ampliar la
-precedencia; <code>union</code>, <code>interseccion</code>,
+precedencia; <code>unión</code>, <code>intersección</code>,
 <code>diferencia</code>.)</p>
 <p><strong>Igualdad estructural [REQ].</strong> <code>=</code> y
 <code>≠</code> operan por <strong>valor</strong> sobre datos compuestos:
@@ -1365,7 +1365,7 @@ función potencia(A)                    # conjunto potencia P(A)
     para cada x en A repite
         nuevos ← ∅                     # se acumula aparte para no mutar &#39;res&#39; al iterar
         para cada S en res repite
-            agrega(nuevos, union(S, {x}))
+            agrega(nuevos, unión(S, {x}))
         fin para
         para cada T en nuevos repite
             agrega(res, T)
@@ -1387,7 +1387,7 @@ fin función
 # --- pruebas ---
 afirma cardinalidad({3, 1, 2, 1}) = 3
 afirma (2 ∈ {1, 2, 3}) = 1
-afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma unión({1, 2}, {2, 3}) = {1, 2, 3}
 afirma cardinalidad(potencia({1, 2, 3})) = 8
 afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6</code></pre>
 <h3 id="relaciones.nemi">22.4 <code>relaciones.nemi</code></h3>
@@ -1598,7 +1598,7 @@ límite adicionales (biblioteca y extensiones)</h2>
 línea, texto de la expresión y mensaje.</li>
 <li><strong><code>agrega</code> sobre algo que no es lista ni
 conjunto:</strong> error de tipo.</li>
-<li><strong><code>∈</code>, <code>union</code>, <code>⊆</code>, etc. con
+<li><strong><code>∈</code>, <code>unión</code>, <code>⊆</code>, etc. con
 un operando que no es conjunto:</strong> error de tipo.</li>
 <li><strong>Igualdad entre tipos distintos</strong> (p. ej. lista
 <code>=</code> conjunto): resultado <code>0</code> (no error), salvo que

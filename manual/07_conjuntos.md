@@ -47,8 +47,8 @@ forma simbólica — no hay palabra equivalente para la negación.
 A ← {1, 2, 3}
 B ← {2, 3, 4}
 imprime(A ⊆ {1, 2, 3, 4})   # ¿A es subconjunto?
-imprime(union(A, B))
-imprime(interseccion(A, B))
+imprime(unión(A, B))
+imprime(intersección(A, B))
 imprime(diferencia(A, B))
 imprime(cardinalidad(A))     # tamaño del conjunto
 ```
@@ -61,7 +61,7 @@ verdadero
 3
 ```
 
-`union`/`interseccion`/`diferencia` son las operaciones ∪/∩/∖ de teoría de
+`unión`/`intersección`/`diferencia` son las operaciones ∪/∩/∖ de teoría de
 conjuntos, pero se escriben como **funciones** (no hay un símbolo `∪` que
 puedas teclear directo en Nemi — es una decisión del lenguaje para no
 saturar el teclado de símbolos poco comunes).

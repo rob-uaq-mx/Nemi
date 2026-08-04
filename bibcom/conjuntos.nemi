@@ -14,7 +14,7 @@ función potencia(A)                    # conjunto potencia P(A)
     para cada x en A repite
         nuevos ← ∅                     # se acumula aparte para no mutar 'res' al iterar
         para cada S en res repite
-            agrega(nuevos, union(S, {x}))
+            agrega(nuevos, unión(S, {x}))
         fin para
         para cada T en nuevos repite
             agrega(res, T)
@@ -36,6 +36,6 @@ fin función
 # --- pruebas ---
 afirma cardinalidad({3, 1, 2, 1}) = 3
 afirma (2 ∈ {1, 2, 3}) = 1
-afirma union({1, 2}, {2, 3}) = {1, 2, 3}
+afirma unión({1, 2}, {2, 3}) = {1, 2, 3}
 afirma cardinalidad(potencia({1, 2, 3})) = 8
 afirma cardinalidad(producto_cartesiano({1, 2}, {3, 4, 5})) = 6

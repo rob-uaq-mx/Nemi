@@ -649,6 +649,39 @@ Python 92/92, `ctest` en verde en `cpp/build` y `Windows/build`, salida real
 de CLI confirmada en las tres implementaciones. `manual/08_verificacion.md`
 (única cita restante del formato viejo) actualizada y HTML regenerado.
 
+### Addendum — acentos en `unión`/`intersección` (2026-08-03)
+
+El usuario reportó que las primitivas de conjuntos `union`/`interseccion`
+deberían llevar acento. Confirmado con un agente Explore + verificación
+directa: son primitivas reales (no solo prosa), registradas en las tres
+tablas de despacho; las hermanas `pertenece`/`subconjunto`/`diferencia`/
+`cardinalidad` ya estaban bien. Arreglado **de forma aditiva**, siguiendo un
+patrón ya existente en el propio código para `raíz`/`raiz` (√, verificado en
+`cpp/src/interpreter.cpp:490-491` y su espejo en `Windows/`, y en
+`python/nemi/interpreter.py:787-788`): las tablas de primitivas ganan las
+llaves `unión`/`intersección` (canónicas, usadas también en los mensajes de
+error internos de aridad/tipo) apuntando a las mismas funciones, sin quitar
+`union`/`interseccion` como alias — así ningún código existente (`bibcom/`,
+tareas de estudiantes) se rompe. Actualizados a la forma acentuada como la
+enseñada: `Nemi.md` (tabla §20.2, prosa, el listado de `conjuntos.nemi`
+citado en §22.3, y §23), `bibcom/conjuntos.nemi` (debe quedar idéntico a lo
+que cita `Nemi.md`), `bibcom/README.md`, `manual/07_conjuntos.md`,
+`manual/referencia_rapida.md`, `para-llm-mates-discretas.md`. Las menciones
+en `backlog_v0.2.md` de fases anteriores (Fase 1, addendum de `en`) se
+dejaron tal cual — son registro histórico de lo que era cierto en su
+momento, no documentación viva. Se agregó un checkeo nuevo por cada
+implementación confirmando que la forma acentuada funciona, junto a las
+pruebas ya existentes de `union`/`interseccion` (que siguen pasando sin
+cambios gracias al alias). Verificado: Python 94/94, `cpp/build` 89/89,
+`Windows/build` 89/89 — los tres en verde; prueba manual de CLI en las tres
+implementaciones confirmando ambas grafías y que el mensaje de error de
+aridad usa la forma acentuada sin importar cuál se haya escrito. Un detalle
+del entorno, no del código: el build de `Windows/` chocó de nuevo con el bug
+ya conocido del enlazador incremental de MSVC (`nemi.exe` quedó desactualizado
+pese a que el log decía éxito) — mismo arreglo de siempre, borrar el `.exe` y
+forzar el enlace completo. HTML regenerado (`docs/Nemi.html`,
+`docs/manual/{07_conjuntos,referencia_rapida}.html`).
+
 ---
 
 ## Riesgos / notas
